@@ -1,5 +1,6 @@
 #include "SPH_2D.h"
 
+
 SPH_main *SPH_particle::main_data;
 
 void SPH_particle::calc_index(void)
@@ -43,27 +44,42 @@ void SPH_main::initialise_grid(void)
 }
 
 
-void SPH_main::place_points(double *min, double *max)
+void SPH_main::place_points(double *min, double *max, string shape)
 {
 	double x[2] = { min[0], min[1] };
-	SPH_particle particle;
-
-	while (x[0] <= max[0])
-	{
-		x[1] = min[1];
-		while (x[1] <= max[1])
-		{
-			for (int i = 0; i < 2; i++)
-				particle.x[i] = x[i];
-
-			particle.calc_index();
-
-			particle_list.push_back(particle);
-
-			x[1] += dx;
-		}
-		x[0] += dx;
-	}
+	SPH_particle inner_particle;
+    SPH_particle outer_particle;
+    inner_particle.boundary_particle = false;
+    outer_particle.boundary_particle = true;
+    
+    if (shape == "rectangle")
+    {
+        while (x[0] <= max[0])
+        {
+            x[1] = min[1];
+            while (x[1] <= max[1])
+            {
+                if ((x[0] < min[0] + 2.*h) || (x[0] > max[0] - 2.*h) || (x[1] < min[1] + 2.*h) || (x[1] > max[1] - 2.*h)) {
+                    for (int i = 0; i < 2; i++)
+                        inner_particle.x[i] = x[i];
+                    inner_particle.calc_index();
+                    particle_list.push_back(inner_particle);
+                    cout << inner_particle.boundary_particle;
+                    x[1] += dx;
+                }
+                else {
+                    for (int i = 0; i < 2; i++)
+                        outer_particle.x[i] = x[i];
+                    outer_particle.calc_index();
+                    particle_list.push_back(outer_particle);
+                    cout << outer_particle.boundary_particle;
+                    x[1] += dx;
+                }
+            }
+            cout << endl;
+            x[0] += dx;
+        }
+    }
 }
 
 

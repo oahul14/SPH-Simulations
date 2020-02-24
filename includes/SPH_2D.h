@@ -9,15 +9,16 @@ class SPH_main;
 
 class SPH_particle
 {
-public:
-	double x[2], v[2];				//position and velocity
-	double rho, P;					//density and pressure
+public:		
+	double x1, x2, v1, v2;			// position and velocity
+	double rho, P;					// density and pressure
+	bool boundary_particle;
 
-	static SPH_main *main_data;		//link to SPH_main class so that it can be used in calc_index
+	static SPH_main *main_data;		// link to SPH_main class so that it can be used in calc_index
 
-	int list_num[2];				//index in neighbour finding array
+	int list_num[2];				// index in neighbour finding array
 
-	void calc_index(void);
+	void calc_index();
 };
 
 

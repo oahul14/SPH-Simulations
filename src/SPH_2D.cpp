@@ -83,12 +83,15 @@ void SPH_main::place_points(double *min, double *max, string shape)
     }
     else if (shape == "shoaling")
     {
+        double beach_height_ratio = 0.2;
+        double beach_length_ratio = 0.5;
+        
         // beach starts at half way in x1: (x1, 2h)
-        double shoaling_x1_start = (max[0] - 2.*h) / 2;
+        double shoaling_x1_start = (max[0] - 2.*h) - beach_length_ratio * (max[0] - 2.*h);
         double shoaling_x1_end = max[0] - 2.*h;
         // beach ends at (max[0] - 2h, x2)
         double shoaling_x2_start = 0;
-        double shoaling_x2_end = (max[1] - 2.*h) / 5;
+        double shoaling_x2_end = beach_height_ratio * (max[1] - 2.*h);
         
         const double shoaling_slope = (shoaling_x2_end - shoaling_x2_start) / (shoaling_x1_end - shoaling_x1_start);
         cout << shoaling_slope << endl;
@@ -101,10 +104,10 @@ void SPH_main::place_points(double *min, double *max, string shape)
             {
                 if ((x[0] < min[0] + 2.*h) || (x[0] > max[0] - 2.*h) || (x[1] < min[1] + 2.*h) || (x[1] > max[1] - 2.*h)) {
                     for (int i = 0; i < 2; i++)
-                        inner_particle.x[i] = x[i];
-                    inner_particle.calc_index();
-                    particle_list.push_back(inner_particle);
-                    cout << inner_particle.boundary_particle;
+                        outer_particle.x[i] = x[i];
+                    outer_particle.calc_index();
+                    particle_list.push_back(outer_particle);
+//                    cout <<  particle_list[particle_list.size() - 1].boundary_particle;
                     x[0] += dx;
                 }
                 else if ((x[0] >= shoaling_x1_start) && (x[0] <= shoaling_x1_end) && (x[1] >= shoaling_x2_start) && (x[1] <= shoaling_x2_end))
@@ -113,15 +116,15 @@ void SPH_main::place_points(double *min, double *max, string shape)
                         outer_particle.x[i] = x[i];
                     outer_particle.calc_index();
                     particle_list.push_back(outer_particle);
-                    cout << inner_particle.boundary_particle;
+//                    cout <<  particle_list[particle_list.size() - 1].boundary_particle;
                     x[0] += dx;
                 }
                 else {
                     for (int i = 0; i < 2; i++)
-                        outer_particle.x[i] = x[i];
-                    outer_particle.calc_index();
-                    particle_list.push_back(outer_particle);
-                    cout << outer_particle.boundary_particle;
+                        inner_particle.x[i] = x[i];
+                    inner_particle.calc_index();
+                    particle_list.push_back(inner_particle);
+//                    cout <<  particle_list[particle_list.size() - 1].boundary_particle;
                     x[0] += dx;
                 }
             }

@@ -288,7 +288,10 @@ void SPH_main::neighbour_iterate(SPH_particle *part)
                     }
     }
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/Lin
 bool SPH_particle::operator==(const SPH_particle& other) const
 {
 	if(this->x[0] != other.x[0]) return false;
@@ -357,7 +360,7 @@ std::pair<double, double> SPH_main::dvdt(const SPH_particle& p, const std::vecto
 }
 double SPH_main::drhodt(const SPH_particle& p, const std::vector<SPH_particle>& neighbours)
 {
-	double D;
+	double D = 0;
 	for (const auto& i : neighbours)
 	{
 		double r_ij_1 = p.x[0] - i.x[0];

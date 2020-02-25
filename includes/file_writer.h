@@ -1,7 +1,7 @@
 #pragma once
 
-#include <vector>
+#include <list>
+#include <string>
 #include "SPH_2D.h"
 
-int write_file(const char* filename,
-	       std::vector<SPH_particle> *particle_list);
+int write_file(const string filename, const std::list<SPH_particle>& particle_list);

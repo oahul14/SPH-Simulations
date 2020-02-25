@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 #include "../includes/SPH_2D.h"
 #include "SPH_2D.cpp"
@@ -29,6 +30,12 @@ int main(void)
 #include "SPH_2D.cpp"
 #include "file_writer.h"
 #include "file_writer.cpp"
+=======
+#include "../includes/SPH_2D.h"
+//#include "SPH_2D.cpp"
+#include "../includes/file_writer.h"
+//#include "file_writer.cpp"
+>>>>>>> origin/Lin
 
 SPH_main domain;
 

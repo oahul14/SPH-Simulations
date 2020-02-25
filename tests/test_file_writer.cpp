@@ -3,6 +3,9 @@
 
 int main() {
 
+  SPH_main main;
+  SPH_particle::main_data = &main;
+
   SPH_particle particle;
   std::list<SPH_particle> particle_list;
 

@@ -3,7 +3,7 @@
 #include <string>
 #include <iostream>
 
-int main(void)
+int main(int argc, char* argv[])
 {
 	SPH_main domain;
 	SPH_particle::main_data = &domain;
@@ -15,7 +15,9 @@ int main(void)
 	auto first_particle = domain.particle_list.front();
 	write_file("particles_" + std::to_string(domain.t) + ".vtp", domain.particle_list);
 
-	const double t_max = 10*domain.dt;
+	int iterations = 3;
+	if (argc > 1) iterations = std::stoi(argv[1]);
+	const double t_max = iterations*domain.dt;
 	std::cout << "dt = " << domain.dt << std::endl;
 
 	while(domain.t < t_max) {

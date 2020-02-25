@@ -1,5 +1,7 @@
 #pragma once
 #include <vector>
+#include <utility>
+#include <iterator>
 #include <cmath>
 #include <iostream>
 #include <string>
@@ -29,6 +31,7 @@ public:
 	SPH_main();
 
 	void set_values(void);
+	void set_stencil(bool sten);
 	void initialise_grid(void);
 
 	void place_points(double *min, double *max, string shape);
@@ -37,6 +40,7 @@ public:
 
 	void neighbour_iterate(SPH_particle *part);
 
+	bool stencil;							// stencil method or not: false by default
 	double h;								//smoothing length
 	double h_fac;
 	double dx;								//particle initial spacing

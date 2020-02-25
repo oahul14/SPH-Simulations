@@ -12,14 +12,9 @@ class SPH_main;
 
 class SPH_particle
 {
-<<<<<<< HEAD
-public:		
-	double x[2], v[2];			// position and velocity
-=======
 public:
 	SPH_particle();
 	double x[2], v[2];		// position and velocity
->>>>>>> Lin
 	double rho, P;					// density and pressure
 	bool boundary_particle;
 	//double rho0 = 1000;// kg/ m^3
@@ -34,7 +29,7 @@ public:
 	void calc_index();
 	void redef_P(); //function to update the Pressure
 
-	bool operator==(SPH_particle& other);
+	bool operator==(const SPH_particle& other) const;
 };
 
 
@@ -53,15 +48,10 @@ public:
 
 	void neighbour_iterate(SPH_particle *part);
 
-<<<<<<< HEAD
 	bool stencil;							// stencil method or not: false by default
-	double h;								//smoothing length
-	double h_fac;
-	double dx;								//particle initial spacing
-
-	double min_x[2], max_x[2];
+	
     //dimensions of simulation region
-=======
+
 	std::pair<double, double> dvdt(const SPH_particle& p, const std::vector<SPH_particle>& neighbours);
 
 	double drhodt(const SPH_particle& p, const std::vector<SPH_particle>& neighbours);
@@ -81,7 +71,6 @@ public:
 	//artificial speed of sound 
 	double c0 = 20;
 	double min_x[2], max_x[2];				//dimensions of simulation region
->>>>>>> Lin
 
 	int max_list[2];
 

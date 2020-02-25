@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 
-#include "file_writer.h"
+#include "../includes/file_writer.h"
 
 std::string scalar_to_string(const char* name,
 			     std::vector<SPH_particle> *particle_list,

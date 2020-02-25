@@ -1,12 +1,9 @@
-<<<<<<< HEAD
-#include "SPH_2D.h"
+
+#include "../includes/SPH_2D.h"
 #include "SPH_2D.cpp"
-#include "file_writer.h"
+#include "../includes/file_writer.h"
 #include "file_writer.cpp"
-=======
-#include "C:\Users\gc2016\OneDrive - Imperial College London\ACSE\ACSE-4.3\acse-4-sph-morar\includes\SPH_2D.h"
-#include "C:\Users\gc2016\OneDrive - Imperial College London\ACSE\ACSE-4.3\acse-4-sph-morar\includes\file_writer.h"
->>>>>>> Lin
+#include "../includes/file_writer.h"
 
 SPH_main domain;
 

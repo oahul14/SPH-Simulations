@@ -1,4 +1,4 @@
-#include "C:\Users\gc2016\OneDrive - Imperial College London\ACSE\ACSE-4.3\acse-4-sph-morar\includes\SPH_2D.h"
+#include "../includes/SPH_2D.h"
 /*
 According to Microsoft:
 Math Constants are not defined in Standard C/C++.
@@ -250,7 +250,8 @@ void SPH_main::neighbour_iterate(SPH_particle *part)					//iterates over all par
                     }
     }
 }
-bool SPH_particle::operator==( SPH_particle& other)
+
+bool SPH_particle::operator==(const SPH_particle& other) const
 {
 	if(this->x[0] != other.x[0]) return false;
 	if(this->x[1] != other.x[1]) return false;

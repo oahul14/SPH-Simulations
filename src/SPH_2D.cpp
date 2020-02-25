@@ -10,6 +10,11 @@ in some libraries the M_PI is not include so we included the #ifndef
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
+#include "SPH_2D.h"
+#include "time_steppers.h"
+
+#include <algorithm>
+#include <list>
 
 
 SPH_main *SPH_particle::main_data;
@@ -36,6 +41,53 @@ void SPH_particle::redef_P()
 	//relates Pressure to density
 	double B = (main_data->rho0 * pow(main_data->c0, 2)) / main_data->gamma;
 	P = B * ((main_data->rho0 / rho) - 1);
+}
+
+const SPH_particle SPH_particle::operator+(const SPH_particle& other) {
+	SPH_particle sum;
+	sum.rho = this->rho + other.rho;
+	if (this->boundary_particle) {
+		sum.x1 = this->x1;
+		sum.x2 = this->x2;
+		sum.v1 = 0;
+		sum.v2 = 0;
+	} else {
+		sum.x1 = this->x1 + other.x1;
+		sum.x2 = this->x2 + other.x2;
+		sum.v1 = this->v1 + other.v1;
+		sum.v2 = this->v2 + other.v2;
+	}
+
+	return sum;
+}
+
+const SPH_particle SPH_particle::operator+(const SPH_particle&& other) {
+	SPH_particle sum = other;
+	sum.rho = this->rho + other.rho;
+	if (this->boundary_particle) {
+		sum.x1 = this->x1;
+		sum.x2 = this->x2;
+		sum.v1 = 0;
+		sum.v2 = 0;
+	} else {
+		sum.x1 = this->x1 + other.x1;
+		sum.x2 = this->x2 + other.x2;
+		sum.v1 = this->v1 + other.v1;
+		sum.v2 = this->v2 + other.v2;
+	}
+
+	return sum;
+}
+
+const SPH_particle SPH_particle::operator*(const double dt) {
+	SPH_particle result;
+	result.x1 = this->x1 * dt;
+	result.x2 = this->x2 * dt;
+	result.v1 = this->v1 * dt;
+	result.v2 = this->v2 * dt;
+	result.rho = this->rho * dt;
+
+	return result
 }
 
 SPH_main::SPH_main()
@@ -186,9 +238,9 @@ void SPH_main::allocate_to_grid(void)				//needs to be called each time that all
 }
 
 
-void SPH_main::neighbour_iterate(SPH_particle *part)					//iterates over all particles within 2h of part - can be made more efficient using a stencil and realising that all interactions are symmetric
+SPH_particle SPH_main::neighbour_iterate(const SPH_particle& part)					//iterates over all particles within 2h of part - can be made more efficient using a stencil and realising that all interactions are symmetric
 {
-    double dist;			//distance between particles
+    /*double dist;			//distance between particles
     double dn[2];			//vector from 1st to 2nd particle
 
     if (!stencil) {
@@ -249,6 +301,23 @@ void SPH_main::neighbour_iterate(SPH_particle *part)					//iterates over all par
                         }
                     }
     }
+	SPH_particle *other_part;*/
+	double dist;			//distance between particles
+	double dn[2];			//vector from 1st to 2nd particle
+	std::list<SPH_particle*> neighbours;
+
+	for (int i = max(part.list_num[0] - 1, 0); i < min(part.list_num[0] + 2, this->max_list[0]); i++) {
+		for (int j = max(part.list_num[1] - 1, 0); j < min(part.list_num[1] + 2, this->max_list[1]); j++) {
+			for (const auto other_part : search_grid[i][j]) {
+				dist = std::sqrt(std::pow(part.x1 - other_part->x1, 2) + std::pow(part.x2 - other_part->x2, 2));
+				if (dist < 2 * this->h) {
+					neighbours.push_back(other_part);
+				}
+			}
+		}
+	}
+
+	return forward_euler(part, neighbours, this->t, this->dt);
 }
 bool SPH_particle::operator==(const SPH_particle& other) const
 {

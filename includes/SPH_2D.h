@@ -17,7 +17,7 @@ public:
 	SPH_particle();
 	double x[2], v[2];		// position and velocity
 	double rho, P;					// density and pressure
-	bool boundary_particle;
+	bool boundary_particle = false;
 	//double rho0 = 1000;// kg/ m^3
 
 	static SPH_main *main_data;		// link to SPH_main class so that it can be used in calc_index
@@ -31,6 +31,10 @@ public:
 	void redef_P(); //function to update the Pressure
 
 	bool operator==(const SPH_particle& other) const;
+
+	const SPH_particle operator+(const SPH_particle& other) const;
+	const SPH_particle operator+(const SPH_particle&& other) const;
+	const SPH_particle operator*(const double dt) const;
 };
 
 

@@ -15,6 +15,7 @@ in some libraries the M_PI is not include so we included the #ifndef
 #include <algorithm>
 #include <list>
 #include <iostream>
+#include <cassert>
 
 
 SPH_main *SPH_particle::main_data;

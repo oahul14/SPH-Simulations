@@ -1,4 +1,4 @@
-#include "C:\Users\gc2016\OneDrive - Imperial College London\ACSE\ACSE-4.3\acse-4-sph-morar\includes\SPH_2D.h"
+#include "../includes/SPH_2D.h"
 /*
 According to Microsoft:
 Math Constants are not defined in Standard C/C++.

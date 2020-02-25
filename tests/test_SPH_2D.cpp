@@ -13,15 +13,16 @@ int main(void)
 
 	domain.place_points(domain.min_x, domain.max_x);				//places initial points - will need to be modified to include boundary points and the specifics of where the fluid is in the domain
 	auto first_particle = domain.particle_list.front();
-	write_file("particles_" + std::to_string(domain.t) + ".vtk", domain.particle_list);
+	write_file("particles_" + std::to_string(domain.t) + ".vtp", domain.particle_list);
 
-	const double t_max = 1*domain.dt;
+	const double t_max = 10*domain.dt;
 	std::cout << "dt = " << domain.dt << std::endl;
 
 	while(domain.t < t_max) {
 		domain.timestep();
+		write_file("particles_" + std::to_string(domain.t) + ".vtp", domain.particle_list);
 	}
-	write_file("particles_" + std::to_string(domain.t) + ".vtk", domain.particle_list);
+	write_file("particles_" + std::to_string(domain.t) + ".vtp", domain.particle_list);
 	
 	return 0;
 }

@@ -5,7 +5,7 @@ To use them, you must first define _USE_MATH_DEFINES and then include cmath
 in some libraries the M_PI is not include so we included the #ifndef
 */
 #define _USE_MATH_DEFINES
-#include<cmath>
+#include <cmath>
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
@@ -21,10 +21,19 @@ SPH_main *SPH_particle::main_data;
 SPH_particle::SPH_particle()
 {
 	//update the Pressure evrytime you instasiate a particle
+    rho = main_data->rho0;
 	redef_P();
 }
 
-void SPH_particle::calc_index()
+SPH_particle::SPH_particle(double rho, bool bound)
+{
+    rho = rho;
+    set_m();
+    redef_P();
+    boundary_particle = bound;
+}
+
+void SPH_particle::calc_index(void)
 {
 	for (int i = 0; i < 2; i++)
 		list_num[i] = int((x[i] - main_data->min_x[i]) / (2.0*main_data->h));
@@ -34,6 +43,7 @@ void SPH_particle::set_m()
 {
 	m = pow(main_data->dx, 2) * (main_data->rho0);
 }
+
 void SPH_particle::redef_P()
 {
 	//implementtaion of the Tait Equition
@@ -105,7 +115,7 @@ void SPH_main::set_values(void)
 	max_x[0] = 20.0;
 	max_x[1] = 10.0;
 
-	dx = 0.1;
+	dx = 0.2;
 	
 	h_fac = 1.3;
 	h = dx*h_fac;
@@ -128,11 +138,11 @@ void SPH_main::initialise_grid(void)
 
 void SPH_main::place_points(double *min, double *max, string shape)
 {
+    cout << min[0] << " " << min[1] << endl;
 	double x[2] = { min[0], min[1] };
-	SPH_particle inner_particle;
-    SPH_particle outer_particle;
-    inner_particle.boundary_particle = false;
-    outer_particle.boundary_particle = true;
+	SPH_particle water_particle(rho0, false);
+    SPH_particle bound_particle(rho0, true);
+    SPH_particle empty_particle(0, false);
     
     if (shape == "rectangle")
     {
@@ -141,24 +151,38 @@ void SPH_main::place_points(double *min, double *max, string shape)
             x[0] = min[0];
             while (x[0] <= max[0])
             {
-                if ((x[0] < min[0] + 2.*h) || (x[0] > max[0] - 2.*h) || (x[1] < min[1] + 2.*h) || (x[1] > max[1] - 2.*h)) {
+                if ((x[0] < min[0] + 2.*h) || (x[0] > max[0] - 2.*h) || (x[1] < min[1] + 2.*h) || (x[1] > max[1] - 2.*h)) 
+                {
                     for (int i = 0; i < 2; i++)
-                        inner_particle.x[i] = x[i];
-                    inner_particle.calc_index();
-                    particle_list.push_back(inner_particle);
-                    // cout << inner_particle.boundary_particle;
+                        bound_particle.x[i] = x[i];
+                    bound_particle.calc_index();
+                    particle_list.push_back(bound_particle);
+                    // cout << particle_list[particle_list.size() - 1].boundary_particle;
+                    cout << "B ";
                     x[0] += dx;
                 }
-                else {
+                else if ((x[0] <= 3 && x[1] <= 5) || (3 <= x[0] && x[1] <= 2)) 
+                {
                     for (int i = 0; i < 2; i++)
-                        outer_particle.x[i] = x[i];
-                    outer_particle.calc_index();
-                    particle_list.push_back(outer_particle);
-                    // cout << outer_particle.boundary_particle;
+                        water_particle.x[i] = x[i];
+                    water_particle.calc_index();
+                    particle_list.push_back(water_particle);
+                    // cout << particle_list[particle_list.size() - 1].boundary_particle;
+                    cout << "W ";
+                    x[0] += dx;
+                }
+                else 
+                {
+                    for (int i = 0; i < 2; i++)
+                        empty_particle.x[i] = x[i];
+                    empty_particle.calc_index();
+                    particle_list.push_back(empty_particle);
+                    // cout << particle_list[particle_list.size() - 1].boundary_particle;
+                    cout << "E ";
                     x[0] += dx;
                 }
             }
-            // cout << endl;
+            cout << endl;
             x[1] += dx;
         }
     }
@@ -172,7 +196,7 @@ void SPH_main::place_points(double *min, double *max, string shape)
         double shoaling_x1_end = max[0] - 2.*h;
         // beach ends at (max[0] - 2h, x2)
         double shoaling_x2_start = 0;
-        double shoaling_x2_end = beach_height_ratio * (max[1] - 2.*h);
+        double shoaling_x2_end = beach_height_ratio * (max[1] - 2.*h) - dx;
         
         const double shoaling_slope = dx / (shoaling_x2_end - shoaling_x2_start);
         const double start[2] = { shoaling_x1_start, shoaling_x2_start };
@@ -185,32 +209,45 @@ void SPH_main::place_points(double *min, double *max, string shape)
                 if ((x[0] < min[0] + 2.*h) || (x[0] > max[0] - 2.*h) || (x[1] < min[1] + 2.*h) || (x[1] > max[1] - 2.*h)) 
                 {
                     for (int i = 0; i < 2; i++)
-                        outer_particle.x[i] = x[i];
-                    outer_particle.calc_index();
-                    particle_list.push_back(outer_particle);
+                        bound_particle.x[i] = x[i];
+                    bound_particle.calc_index();
+                    particle_list.push_back(bound_particle);
                     // cout <<  particle_list[particle_list.size() - 1].boundary_particle;
+                    cout << "B ";
                     x[0] += dx;
                 }
                 else if ((x[0] >= shoaling_x1_start) && (x[0] <= shoaling_x1_end) && (x[1] >= shoaling_x2_start) && (x[1] <= shoaling_x2_end))
                 {
                     for (int i = 0; i < 2; i++)
-                        outer_particle.x[i] = x[i];
-                    outer_particle.calc_index();
-                    particle_list.push_back(outer_particle);
+                        bound_particle.x[i] = x[i];
+                    bound_particle.calc_index();
+                    particle_list.push_back(bound_particle);
                     // cout <<  particle_list[particle_list.size() - 1].boundary_particle;
+                    cout << "B ";
+                    x[0] += dx;
+                }
+                else if ((x[0] <= 3 && x[1] <= 5) || (3 <= x[0] && x[1] <= 2)) 
+                {
+                    for (int i = 0; i < 2; i++)
+                        water_particle.x[i] = x[i];
+                    water_particle.calc_index();
+                    particle_list.push_back(water_particle);
+                    // cout << particle_list[particle_list.size() - 1].boundary_particle;
+                    cout << "W ";
                     x[0] += dx;
                 }
                 else 
                 {
                     for (int i = 0; i < 2; i++)
-                        inner_particle.x[i] = x[i];
-                    inner_particle.calc_index();
-                    particle_list.push_back(inner_particle);
-                    // cout <<  particle_list[particle_list.size() - 1].boundary_particle;
+                        empty_particle.x[i] = x[i];
+                    empty_particle.calc_index();
+                    particle_list.push_back(empty_particle);
+                    // cout << particle_list[particle_list.size() - 1].boundary_particle;
+                    cout << "E ";
                     x[0] += dx;
                 }
             }
-            // cout << endl;
+            cout << endl;
             if ((x[1] >= start[1]) && x[1] <= end[1])
             {
                 shoaling_x1_start += shoaling_slope * (end[0] - start[0]);
@@ -234,6 +271,24 @@ vector<vector<list<SPH_particle*>>> SPH_main::search_grid(list<SPH_particle>& pa
 	return search_grid;
 }
 
+std::list<SPH_particle*> SPH_main::neighbours(const SPH_particle& part, const vector<vector<list<SPH_particle*>>> search_grid) {
+    double dist;			//distance between particles
+	std::list<SPH_particle*> neighbours;
+
+	for (int i = max(part.list_num[0] - 1, 0); i < min(part.list_num[0] + 2, this->max_list[0]); i++) {
+		for (int j = max(part.list_num[1] - 1, 0); j < min(part.list_num[1] + 2, this->max_list[1]); j++) {
+			for (const auto other_part : search_grid[i][j]) {
+				dist = std::sqrt(std::pow(part.x[0] - other_part->x[0], 2) + std::pow(part.x[1] - other_part->x[1], 2));
+				if (dist < 2 * this->h) {
+					neighbours.push_back(other_part);
+				}
+			}
+		}
+	}
+
+    return neighbours;
+}
+
 
 SPH_particle SPH_main::RHS(const SPH_particle& part, const vector<vector<list<SPH_particle*>>>& search_grid)					//iterates over all particles within 2h of part - can be made more efficient using a stencil and realising that all interactions are symmetric
 {
@@ -250,7 +305,6 @@ SPH_particle SPH_main::RHS(const SPH_particle& part, const vector<vector<list<SP
                         for (unsigned int cnt = 0; cnt < search_grid[i][j].size(); cnt++)
                         {
                             other_part = search_grid[i][j][cnt];
-
                             if (part != other_part)					//stops particle interacting with itself
                             {
                                 //Calculates the distance between potential neighbours
@@ -263,7 +317,8 @@ SPH_particle SPH_main::RHS(const SPH_particle& part, const vector<vector<list<SP
                                 {
                                     //TODO: all the interactions between the particles
                                     //Should be removed from the code - simply here for you to see that it is working
-                                    cout << "dn: " << dn[0] << " " << dn[1] << endl;		
+                                    cout << "dn: " << dn[0] << " " << dn[1] << endl;	
+                                    neighbours.push_back(other_part);	
                                 }
                             }
                         }
@@ -295,25 +350,13 @@ SPH_particle SPH_main::RHS(const SPH_particle& part, const vector<vector<list<SP
                         if (dist < 2.*h)
                         {
                             cout << "dn: " << dn[0] << " " << dn[1] << endl;
+                            neighbours.push_back(opart);
                         }
                     }
     }
 	SPH_particle *other_part;*/
 
-	double dist;			//distance between particles
-	double dn[2];			//vector from 1st to 2nd particle
-	std::list<SPH_particle*> neighbours;
-
-	for (int i = max(part.list_num[0] - 1, 0); i < min(part.list_num[0] + 2, this->max_list[0]); i++) {
-		for (int j = max(part.list_num[1] - 1, 0); j < min(part.list_num[1] + 2, this->max_list[1]); j++) {
-			for (const auto other_part : search_grid[i][j]) {
-				dist = std::sqrt(std::pow(part.x[0] - other_part->x[0], 2) + std::pow(part.x[1] - other_part->x[1], 2));
-				if (dist < 2 * this->h) {
-					neighbours.push_back(other_part);
-				}
-			}
-		}
-	}
+	const auto neighbours = this->neighbours(part, search_grid);
 
 	SPH_particle result;
 
@@ -384,8 +427,22 @@ void SPH_main::timestep() {
 	// 	offsets_1_it++;
 	// 	offsets_2_it++;
 	// }
-}
 
+
+    /* smoothing */
+
+    std::list<SPH_particle> smoothed_state;
+
+    const auto grid = this->search_grid(this->particle_list);	
+    
+    for (const auto& p : this->particle_list) {
+        smoothed_state.push_back(this->smooth(p, this->neighbours(p, grid)));
+    }
+
+    assert(smoothed_state.size() == this->particle_list.size());
+
+    this->particle_list = move(smoothed_state);
+}
 
 bool SPH_particle::operator==(const SPH_particle& other) const
 {
@@ -472,5 +529,23 @@ double SPH_main::drhodt(const SPH_particle& p, const std::list<SPH_particle*>& n
 		D = D + i->m * dwdr * (v_ij_1 * e_ij_1 + v_ij_2 * e_ij_2);
 	}
 	return D;
+}
 
+SPH_particle SPH_main::smooth(const SPH_particle& part, const list<SPH_particle*>& neighbours)
+{
+    auto smoothed = part;
+    double w = W(0.);       // calculate kernal for part itself
+    double sum_w = w;
+    double sum_wdrho = w / part.rho;
+
+    for (auto opart : neighbours)
+    {
+        double r_ij = sqrt(pow(opart->x[0] - part.x[0], 2) + pow(opart->x[1] - part.x[1], 2));
+        w = W(r_ij);
+        sum_w += w;
+        sum_wdrho += w / opart->rho;
+    }
+    smoothed.rho = sum_w / sum_wdrho;
+
+    return smoothed;
 }

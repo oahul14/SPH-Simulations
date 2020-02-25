@@ -16,6 +16,7 @@ class SPH_particle
 
 public:
 	SPH_particle();
+	SPH_particle(double rho, bool bound);
 	double x[2], v[2];		// position and velocity
 	double rho, P;					// density and pressure
 	bool boundary_particle = false;
@@ -51,6 +52,7 @@ public:
 	void place_points(double *min, double *max, string shape = "rectangle");
     
 	vector<vector<list<SPH_particle*>>> search_grid(list<SPH_particle>& particle_list);			//allocates all the points to the search grid (assumes that index has been appropriately updated)
+	std::list<SPH_particle*> neighbours(const SPH_particle& part, const vector<vector<list<SPH_particle*>>> search_grid);
 
 	SPH_particle RHS(const SPH_particle& part, const vector<vector<list<SPH_particle*>>>& search_grid);
 	std::vector<SPH_particle> offsets(std::list<SPH_particle>& particle_list);
@@ -63,6 +65,8 @@ public:
 	double W(const double r);
 
 	double dW(const double r);
+
+	SPH_particle smooth(const SPH_particle& part, const list<SPH_particle*>& neighbours);
 
 
 	double h;								//smoothing length
@@ -79,6 +83,7 @@ public:
 
 	double t = 0;	
 	double dt;
+	double smoothing_interval;
 
 	int max_list[2];
 

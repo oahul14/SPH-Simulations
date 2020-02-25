@@ -14,6 +14,7 @@ in some libraries the M_PI is not include so we included the #ifndef
 
 #include <algorithm>
 #include <list>
+#include <iostream>
 
 
 SPH_main *SPH_particle::main_data;
@@ -21,16 +22,18 @@ SPH_main *SPH_particle::main_data;
 SPH_particle::SPH_particle()
 {
 	//update the Pressure evrytime you instasiate a particle
-    rho = main_data->rho0;
-	redef_P();
+    this->rho = main_data->rho0;
+    this->v[0] = this->v[1] = 0;
+	this->redef_P();
 }
 
 SPH_particle::SPH_particle(double rho, bool bound)
 {
-    rho = rho;
-    set_m();
-    redef_P();
-    boundary_particle = bound;
+    this->rho = rho;
+    this->v[0] = this->v[1] = 0;
+    this->set_m();
+    this->redef_P();
+    this->boundary_particle = bound;
 }
 
 void SPH_particle::calc_index(void)
@@ -104,7 +107,6 @@ const SPH_particle SPH_particle::operator*(const double dt) const {
 SPH_main::SPH_main()
 {
 	SPH_particle::main_data = this;
-	this->dt = 0.1*this->h/this->c0;
 }
 
 void SPH_main::set_values(void)
@@ -119,6 +121,7 @@ void SPH_main::set_values(void)
 	
 	h_fac = 1.3;
 	h = dx*h_fac;
+    this->dt = 0.1*this->h/this->c0;
 }
 
 void SPH_main::set_stencil(bool sten) { stencil = sten; }
@@ -140,10 +143,11 @@ void SPH_main::place_points(double *min, double *max, string shape)
 {
     cout << min[0] << " " << min[1] << endl;
 	double x[2] = { min[0], min[1] };
+
 	SPH_particle water_particle(rho0, false);
     SPH_particle bound_particle(rho0, true);
     SPH_particle empty_particle(0, false);
-    
+
     if (shape == "rectangle")
     {
         while (x[1] <= max[1])
@@ -155,34 +159,32 @@ void SPH_main::place_points(double *min, double *max, string shape)
                 {
                     for (int i = 0; i < 2; i++)
                         bound_particle.x[i] = x[i];
-                    bound_particle.calc_index();
                     particle_list.push_back(bound_particle);
                     // cout << particle_list[particle_list.size() - 1].boundary_particle;
-                    cout << "B ";
+                    // cout << "B ";
                     x[0] += dx;
                 }
                 else if ((x[0] <= 3 && x[1] <= 5) || (3 <= x[0] && x[1] <= 2)) 
                 {
                     for (int i = 0; i < 2; i++)
                         water_particle.x[i] = x[i];
-                    water_particle.calc_index();
                     particle_list.push_back(water_particle);
                     // cout << particle_list[particle_list.size() - 1].boundary_particle;
-                    cout << "W ";
+                    // cout << "W ";
                     x[0] += dx;
                 }
                 else 
                 {
-                    for (int i = 0; i < 2; i++)
-                        empty_particle.x[i] = x[i];
-                    empty_particle.calc_index();
-                    particle_list.push_back(empty_particle);
+                    // for (int i = 0; i < 2; i++)
+                    //     empty_particle.x[i] = x[i];
+                    // empty_particle.calc_index();
+                    // particle_list.push_back(empty_particle);
                     // cout << particle_list[particle_list.size() - 1].boundary_particle;
-                    cout << "E ";
+                    // cout << "E ";
                     x[0] += dx;
                 }
             }
-            cout << endl;
+            // cout << endl;
             x[1] += dx;
         }
     }
@@ -213,7 +215,7 @@ void SPH_main::place_points(double *min, double *max, string shape)
                     bound_particle.calc_index();
                     particle_list.push_back(bound_particle);
                     // cout <<  particle_list[particle_list.size() - 1].boundary_particle;
-                    cout << "B ";
+                    // cout << "B ";
                     x[0] += dx;
                 }
                 else if ((x[0] >= shoaling_x1_start) && (x[0] <= shoaling_x1_end) && (x[1] >= shoaling_x2_start) && (x[1] <= shoaling_x2_end))
@@ -223,7 +225,7 @@ void SPH_main::place_points(double *min, double *max, string shape)
                     bound_particle.calc_index();
                     particle_list.push_back(bound_particle);
                     // cout <<  particle_list[particle_list.size() - 1].boundary_particle;
-                    cout << "B ";
+                    // cout << "B ";
                     x[0] += dx;
                 }
                 else if ((x[0] <= 3 && x[1] <= 5) || (3 <= x[0] && x[1] <= 2)) 
@@ -233,7 +235,7 @@ void SPH_main::place_points(double *min, double *max, string shape)
                     water_particle.calc_index();
                     particle_list.push_back(water_particle);
                     // cout << particle_list[particle_list.size() - 1].boundary_particle;
-                    cout << "W ";
+                    // cout << "W ";
                     x[0] += dx;
                 }
                 else 
@@ -243,11 +245,11 @@ void SPH_main::place_points(double *min, double *max, string shape)
                     empty_particle.calc_index();
                     particle_list.push_back(empty_particle);
                     // cout << particle_list[particle_list.size() - 1].boundary_particle;
-                    cout << "E ";
+                    // cout << "E ";
                     x[0] += dx;
                 }
             }
-            cout << endl;
+            // cout << endl;
             if ((x[1] >= start[1]) && x[1] <= end[1])
             {
                 shoaling_x1_start += shoaling_slope * (end[0] - start[0]);
@@ -428,6 +430,7 @@ void SPH_main::timestep() {
 	// 	offsets_2_it++;
 	// }
 
+    this->t += this->dt;
 
     /* smoothing */
 
@@ -516,7 +519,9 @@ double SPH_main::drhodt(const SPH_particle& p, const std::list<SPH_particle*>& n
 	double D = 0;
 	for (const auto& i : neighbours)
 	{
-		double r_ij_1 = p.x[0] - i->x[0];
+		if (i == &p) continue;
+
+        double r_ij_1 = p.x[0] - i->x[0];
 		double r_ij_2 = p.x[1] - i->x[1];
 		double dist = std::sqrt(std::pow(r_ij_1, 2) + std::pow(r_ij_2, 2));
 		double v_ij_1 = p.v[0] - i->v[0];

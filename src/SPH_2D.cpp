@@ -11,7 +11,6 @@ in some libraries the M_PI is not include so we included the #ifndef
 #endif
 
 #include "../includes/SPH_2D.h"
-#include "../includes/time_steppers.h"
 
 #include <algorithm>
 #include <list>
@@ -95,7 +94,7 @@ const SPH_particle SPH_particle::operator*(const double dt) const {
 SPH_main::SPH_main()
 {
 	SPH_particle::main_data = this;
-    stencil = false;
+	this->dt = 0.1*this->h/this->c0;
 }
 
 void SPH_main::set_values(void)
@@ -225,7 +224,7 @@ void SPH_main::place_points(double *min, double *max, string shape)
 //needs to be called each time that all the particles have their positions updated
 vector<vector<list<SPH_particle*>>> SPH_main::search_grid(list<SPH_particle>& particle_list) {
 
-	vector<vector<list<SPH_particle*>>> search_grid;
+	vector<vector<list<SPH_particle*>>> search_grid(max_list[0], vector<list<SPH_particle*>>(max_list[1]));
 
 	for (auto& p : particle_list) {
 		p.calc_index();
@@ -344,7 +343,7 @@ std::vector<SPH_particle> SPH_main::offsets(std::list<SPH_particle>& particle_li
 }
 
 
-void SPH_main::timestep(const double dt) {
+void SPH_main::timestep() {
 
 	const auto offsets = this->offsets(this->particle_list);
 
@@ -352,11 +351,39 @@ void SPH_main::timestep(const double dt) {
 	auto particle_list_it = this->particle_list.begin();
 	auto offsets_it = offsets.cbegin();
 	while(particle_list_it != this->particle_list.end()) {
-		*particle_list_it = *particle_list_it + (*offsets_it * dt);
+		*particle_list_it = *particle_list_it + (*offsets_it * this->dt);
 		particle_list_it->redef_P();
 		particle_list_it++;
 		offsets_it++;
 	}
+
+	// improved euler
+	// const auto offsets_1 = this->offsets(this->particle_list);
+	// auto next_state_star = this->particle_list;
+
+	// auto next_state_star_it = next_state_star.begin();
+	// auto offsets_1_it = offsets_1.cbegin();
+	// while(next_state_star_it != next_state_star.end()) {
+	// 	*next_state_star_it = *next_state_star_it + (*offsets_1_it * this->dt);
+	// 	next_state_star_it->redef_P();
+	// 	next_state_star_it++;
+	// 	offsets_1_it++;
+
+	// const auto offsets_2 = this->offsets(next_state_star);
+
+	// auto particle_list_it = this->particle_list.begin();
+	// offsets_1_it = offsets_1.cbegin();
+	// auto offsets_2_it = offsets_2.cbegin();
+
+	// while(particle_list_it != this->particle_list.end()) {
+
+	// 	*particle_list_it = *particle_list_it + (*offsets_1_it + *offsets_2_it) * (0.5*this->dt);
+	// 	particle_list_it->redef_P();
+
+	// 	particle_list_it++;
+	// 	offsets_1_it++;
+	// 	offsets_2_it++;
+	// }
 }
 
 

@@ -1,11 +1,46 @@
 #include "navier_stokes.h"
 #include <cmath>
 #include "SPH_2D.h"
+/*
+According to Microsoft:
+Math Constants are not defined in Standard C/C++.
+To use them, you must first define _USE_MATH_DEFINES and then include cmath
+in some libraries the M_PI is not include so we included the #ifndef
+*/
+#define _USE_MATH_DEFINES
+#include<cmath>
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+double pressure()
+{
+}
+
+double W(const double r, const double h)
+{
+    /*
+    CUBIC SPLINE: The smoothing Kernel function
+    intergrates to 1 when integrated over its area
+    r: distance between particles
+    */
+    double q = r / h;
+    double w;
+    if (q < 1) { w = 1 - 1.5 * pow(q, 2) + 0.75 * pow(q, 3); }
+    else if (1 <= q || q < 2) { w = 0.25 * pow((2 - q), 3); }
+    else { w = 0; }
+    return 10 * w / (7 * M_PI * pow(h, 2));
+}
 
 double dW(const double r, const double h)
-{
-    return 2.2;
+{//differential of the cubic spline
+    double q = r / h;
+    double dw;
+    if (q <= 1) { dw = -3 * q + (9 / 4) * pow(q, 2); }
+    else { dw = -0.75 * pow((2 - q), 2); }
+    return 10 * dw / (7 * M_PI * pow(h, 2));
 }
+
 std::pair<double, double> dvdt(const SPH_particle& p, const std::vector<SPH_particle>& neighbours)
 {
     std::pair<double,double> a(0.0,0.0);

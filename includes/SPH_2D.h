@@ -5,6 +5,7 @@
 #include <cmath>
 #include <iostream>
 #include <string>
+#include <list>
 
 using namespace std;
 
@@ -49,13 +50,15 @@ public:
 
 	void place_points(double *min, double *max, string shape);
     
-	void allocate_to_grid(void);			//allocates all the points to the search grid (assumes that index has been appropriately updated)
+	vector<vector<list<SPH_particle*>>> search_grid(list<SPH_particle>& particle_list);			//allocates all the points to the search grid (assumes that index has been appropriately updated)
 
-	void neighbour_iterate(SPH_particle *part);
+	SPH_particle RHS(const SPH_particle& part, const vector<vector<list<SPH_particle*>>>& search_grid);
+	std::vector<SPH_particle> offsets(std::list<SPH_particle>& particle_list);
+	void timestep(const double dt);
 
-	std::pair<double, double> dvdt(const SPH_particle& p, const std::vector<SPH_particle>& neighbours);
+	std::pair<double, double> dvdt(const SPH_particle& p, const std::list<SPH_particle*>& neighbours);
 
-	double drhodt(const SPH_particle& p, const std::vector<SPH_particle>& neighbours);
+	double drhodt(const SPH_particle& p, const std::list<SPH_particle*>& neighbours);
 
 	double W(const double r);
 
@@ -76,8 +79,8 @@ public:
 
 	int max_list[2];
 
-	vector<SPH_particle> particle_list;						//list of all the particles
+	list<SPH_particle> particle_list;						//list of all the particles
 
-	vector<vector<vector<SPH_particle*> > > search_grid;		//Outer 2 are the grid, inner vector is the list of pointers in each cell
+    //Outer 2 are the grid, inner vector is the list of pointers in each cell
     // serach grid excludes boundary cells
 };

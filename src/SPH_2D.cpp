@@ -1,4 +1,3 @@
-#include "../includes/SPH_2D.h"
 /*
 According to Microsoft:
 Math Constants are not defined in Standard C/C++.
@@ -10,8 +9,9 @@ in some libraries the M_PI is not include so we included the #ifndef
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
-#include "SPH_2D.h"
-#include "time_steppers.h"
+
+#include "../includes/SPH_2D.h"
+#include "../includes/time_steppers.h"
 
 #include <algorithm>
 #include <list>
@@ -25,7 +25,7 @@ SPH_particle::SPH_particle()
 	redef_P();
 }
 
-void SPH_particle::calc_index(void)
+void SPH_particle::calc_index()
 {
 	for (int i = 0; i < 2; i++)
 		list_num[i] = int((x[i] - main_data->min_x[i]) / (2.0*main_data->h));
@@ -43,51 +43,53 @@ void SPH_particle::redef_P()
 	P = B * ((main_data->rho0 / rho) - 1);
 }
 
-const SPH_particle SPH_particle::operator+(const SPH_particle& other) {
+const SPH_particle SPH_particle::operator+(const SPH_particle& other) const {
 	SPH_particle sum;
 	sum.rho = this->rho + other.rho;
 	if (this->boundary_particle) {
-		sum.x1 = this->x1;
-		sum.x2 = this->x2;
-		sum.v1 = 0;
-		sum.v2 = 0;
-	} else {
-		sum.x1 = this->x1 + other.x1;
-		sum.x2 = this->x2 + other.x2;
-		sum.v1 = this->v1 + other.v1;
-		sum.v2 = this->v2 + other.v2;
+		sum.x[0] = this->x[0];
+		sum.x[1] = this->x[1];
+		sum.v[0] = this->v[0];
+		sum.v[1] = this->v[1];
+	}
+	else {
+		sum.x[0] = this->x[0] + other.x[0];
+		sum.x[1] = this->x[1] + other.x[1];
+		sum.v[0] = this->v[0] + other.v[0];
+		sum.v[1] = this->v[1] + other.v[1];
 	}
 
 	return sum;
 }
 
-const SPH_particle SPH_particle::operator+(const SPH_particle&& other) {
+const SPH_particle SPH_particle::operator+(const SPH_particle&& other) const {
 	SPH_particle sum = other;
 	sum.rho = this->rho + other.rho;
 	if (this->boundary_particle) {
-		sum.x1 = this->x1;
-		sum.x2 = this->x2;
-		sum.v1 = 0;
-		sum.v2 = 0;
-	} else {
-		sum.x1 = this->x1 + other.x1;
-		sum.x2 = this->x2 + other.x2;
-		sum.v1 = this->v1 + other.v1;
-		sum.v2 = this->v2 + other.v2;
+		sum.x[0] = this->x[0];
+		sum.x[1] = this->x[1];
+		sum.v[0] = this->v[0];
+		sum.v[1] = this->v[1];
+	}
+	else {
+		sum.x[0] = this->x[0] + other.x[0];
+		sum.x[1] = this->x[1] + other.x[1];
+		sum.v[0] = this->v[0] + other.v[0];
+		sum.v[1] = this->v[1] + other.v[1];
 	}
 
 	return sum;
 }
 
-const SPH_particle SPH_particle::operator*(const double dt) {
+const SPH_particle SPH_particle::operator*(const double dt) const {
 	SPH_particle result;
-	result.x1 = this->x1 * dt;
-	result.x2 = this->x2 * dt;
-	result.v1 = this->v1 * dt;
-	result.v2 = this->v2 * dt;
+	result.x[0] = this->x[0] * dt;
+	result.x[1] = this->x[1] * dt;
+	result.v[0] = this->v[0] * dt;
+	result.v[1] = this->v[1] * dt;
 	result.rho = this->rho * dt;
 
-	return result
+	return result;
 }
 
 SPH_main::SPH_main()
@@ -122,10 +124,6 @@ void SPH_main::initialise_grid(void)
 
 		max_list[i] = int((max_x[i] - min_x[i]) / (2.0*h) + 1.0);
 	}
-
-	search_grid.resize(max_list[0]);
-	for (int i=0;i<max_list[0];i++)
-		search_grid[i].resize(max_list[1]);
 }
 
 
@@ -224,21 +222,21 @@ void SPH_main::place_points(double *min, double *max, string shape)
     }
 }
 
+//needs to be called each time that all the particles have their positions updated
+vector<vector<list<SPH_particle*>>> SPH_main::search_grid(list<SPH_particle>& particle_list) {
 
-void SPH_main::allocate_to_grid(void)				//needs to be called each time that all the particles have their positions updated
-{
-	for (int i = 0; i < max_list[0]; i++)
-		for (int j = 0; j < max_list[1]; j++)
-			search_grid[i][j].clear();
+	vector<vector<list<SPH_particle*>>> search_grid;
 
-	for (unsigned int cnt = 0; cnt < particle_list.size(); cnt++)
-	{
-		search_grid[particle_list[cnt].list_num[0]][particle_list[cnt].list_num[1]].push_back(&particle_list[cnt]);
+	for (auto& p : particle_list) {
+		p.calc_index();
+		search_grid[p.list_num[0]][p.list_num[1]].push_back(&p);
 	}
+
+	return search_grid;
 }
 
 
-SPH_particle SPH_main::neighbour_iterate(const SPH_particle& part)					//iterates over all particles within 2h of part - can be made more efficient using a stencil and realising that all interactions are symmetric
+SPH_particle SPH_main::RHS(const SPH_particle& part, const vector<vector<list<SPH_particle*>>>& search_grid)					//iterates over all particles within 2h of part - can be made more efficient using a stencil and realising that all interactions are symmetric
 {
     /*double dist;			//distance between particles
     double dn[2];			//vector from 1st to 2nd particle
@@ -302,6 +300,7 @@ SPH_particle SPH_main::neighbour_iterate(const SPH_particle& part)					//iterate
                     }
     }
 	SPH_particle *other_part;*/
+
 	double dist;			//distance between particles
 	double dn[2];			//vector from 1st to 2nd particle
 	std::list<SPH_particle*> neighbours;
@@ -309,7 +308,7 @@ SPH_particle SPH_main::neighbour_iterate(const SPH_particle& part)					//iterate
 	for (int i = max(part.list_num[0] - 1, 0); i < min(part.list_num[0] + 2, this->max_list[0]); i++) {
 		for (int j = max(part.list_num[1] - 1, 0); j < min(part.list_num[1] + 2, this->max_list[1]); j++) {
 			for (const auto other_part : search_grid[i][j]) {
-				dist = std::sqrt(std::pow(part.x1 - other_part->x1, 2) + std::pow(part.x2 - other_part->x2, 2));
+				dist = std::sqrt(std::pow(part.x[0] - other_part->x[0], 2) + std::pow(part.x[1] - other_part->x[1], 2));
 				if (dist < 2 * this->h) {
 					neighbours.push_back(other_part);
 				}
@@ -317,8 +316,50 @@ SPH_particle SPH_main::neighbour_iterate(const SPH_particle& part)					//iterate
 		}
 	}
 
-	return forward_euler(part, neighbours, this->t, this->dt);
+	SPH_particle result;
+
+	const auto [dv1, dv2] = this->dvdt(part, neighbours);
+    result.v[0] = move(dv1);
+    result.v[1] = move(dv2);
+
+    result.rho = this->drhodt(part, neighbours);
+
+    result.x[0] = part.v[0];
+    result.x[1] = part.v[1];
+
+    return result;
 }
+
+std::vector<SPH_particle> SPH_main::offsets(std::list<SPH_particle>& particle_list) {
+	std::vector<SPH_particle> offsets;
+	offsets.reserve(particle_list.size());
+
+	const auto search_grid = this->search_grid(particle_list);
+
+	for (const auto& p : particle_list) {
+		offsets.push_back(RHS(p, search_grid));
+	}
+
+	return offsets;
+}
+
+
+void SPH_main::timestep(const double dt) {
+
+	const auto offsets = this->offsets(this->particle_list);
+
+	// forward euler
+	auto particle_list_it = this->particle_list.begin();
+	auto offsets_it = offsets.cbegin();
+	while(particle_list_it != this->particle_list.end()) {
+		*particle_list_it = *particle_list_it + (*offsets_it * dt);
+		particle_list_it->redef_P();
+		particle_list_it++;
+		offsets_it++;
+	}
+}
+
+
 bool SPH_particle::operator==(const SPH_particle& other) const
 {
 	if(this->x[0] != other.x[0]) return false;
@@ -328,6 +369,7 @@ bool SPH_particle::operator==(const SPH_particle& other) const
 	if(this->rho != other.rho) return false;
 	else return true;
 }
+
 
 double SPH_main::W(const double r)
 {
@@ -353,54 +395,54 @@ double SPH_main::dW(const double r)
 	return 10 * dw / (7 * M_PI * pow(h, 2));
 }
 
-std::pair<double, double> SPH_main::dvdt(const SPH_particle& p, const std::vector<SPH_particle>& neighbours)
+std::pair<double, double> SPH_main::dvdt(const SPH_particle& p, const std::list<SPH_particle*>& neighbours)
 {
 	std::pair<double, double> a(0.0, 0.0);
 	for (const auto& i : neighbours)
 	{
-		if (i == p) continue;
+		if (i == &p) continue;
 		else
 		{
-			double r_ij_1 = p.x[0] - i.x[0];
-			double r_ij_2 = p.x[1] - i.x[1];
+			double r_ij_1 = p.x[0] - i->x[0];
+			double r_ij_2 = p.x[1] - i->x[1];
 			double dist = std::sqrt(std::pow(r_ij_1, 2) + std::pow(r_ij_2, 2));
-			double v_ij_1 = p.v[0] - i.v[0];
-			double v_ij_2 = p.v[1] - i.v[1];
+			double v_ij_1 = p.v[0] - i->v[0];
+			double v_ij_2 = p.v[1] - i->v[1];
 			double e_ij_1 = r_ij_1 / dist;
 			double e_ij_2 = r_ij_2 / dist;
 
 			double dwdr = dW(dist);
 
 			// x direction
-			double a1 = -i.m * ((p.P / pow(p.rho, 2)) + (i.P / pow(i.rho, 2))) * dwdr * e_ij_1 + p.main_data->mu * (i.m * (1 / pow(p.rho, 2) + 1 / pow(i.rho, 2)) * dwdr * (v_ij_1 / dist));
+			double a1 = -i->m * ((p.P / pow(p.rho, 2)) + (i->P / pow(i->rho, 2))) * dwdr * e_ij_1 + p.main_data->mu * (i->m * (1 / pow(p.rho, 2) + 1 / pow(i->rho, 2)) * dwdr * (v_ij_1 / dist));
 
 			// y direction
-			double a2 = -i.m * ((p.P / pow(p.rho, 2)) + (i.P / pow(i.rho, 2))) * dwdr * e_ij_2 + p.main_data->mu * (i.m * (1 / pow(p.rho, 2) + 1 / pow(i.rho, 2)) * dwdr * (v_ij_2 / dist));
+			double a2 = -i->m * ((p.P / pow(p.rho, 2)) + (i->P / pow(i->rho, 2))) * dwdr * e_ij_2 + p.main_data->mu * (i->m * (1 / pow(p.rho, 2) + 1 / pow(i->rho, 2)) * dwdr * (v_ij_2 / dist));
 
 
-			a.first = a.first + a1;
-			a.second = a.second + a2;
+			a.first += a1;
+			a.second += a2;
 
 		}
 	}
 	return a;
 }
-double SPH_main::drhodt(const SPH_particle& p, const std::vector<SPH_particle>& neighbours)
+double SPH_main::drhodt(const SPH_particle& p, const std::list<SPH_particle*>& neighbours)
 {
 	double D = 0;
 	for (const auto& i : neighbours)
 	{
-		double r_ij_1 = p.x[0] - i.x[0];
-		double r_ij_2 = p.x[1] - i.x[1];
+		double r_ij_1 = p.x[0] - i->x[0];
+		double r_ij_2 = p.x[1] - i->x[1];
 		double dist = std::sqrt(std::pow(r_ij_1, 2) + std::pow(r_ij_2, 2));
-		double v_ij_1 = p.v[0] - i.v[0];
-		double v_ij_2 = p.v[1] - i.v[1];
+		double v_ij_1 = p.v[0] - i->v[0];
+		double v_ij_2 = p.v[1] - i->v[1];
 		double e_ij_1 = r_ij_1 / dist;
 		double e_ij_2 = r_ij_2 / dist;
 
 		double dwdr = dW(dist);
 
-		D = D + i.m * dwdr * (v_ij_1 * e_ij_1 + v_ij_2 * e_ij_2);
+		D = D + i->m * dwdr * (v_ij_1 * e_ij_1 + v_ij_2 * e_ij_2);
 	}
 	return D;
 

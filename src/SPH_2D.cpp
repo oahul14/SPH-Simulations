@@ -1,4 +1,4 @@
-#include "SPH_2D.h"
+#include "C:\Users\gc2016\OneDrive - Imperial College London\ACSE\ACSE-4.3\acse-4-sph-morar\includes\SPH_2D.h"
 
 SPH_main *SPH_particle::main_data;
 
@@ -80,7 +80,8 @@ void SPH_main::allocate_to_grid(void)				//needs to be called each time that all
 }
 
 
-void SPH_main::neighbour_iterate(SPH_particle *part)					//iterates over all particles within 2h of part - can be made more efficient using a stencil and realising that all interactions are symmetric
+void SPH_main::neighbour_iterate(SPH_particle *part)					//iterates over all particles within 2h of part 
+//- can be made more efficient using a stencil and realising that all interactions are symmetric
 {
 	SPH_particle *other_part;
 	double dist;			//distance between particles

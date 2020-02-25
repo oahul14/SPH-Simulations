@@ -14,6 +14,7 @@ class SPH_particle
 {
 public:
 	SPH_particle();
+	SPH_particle(double rho, bool bound);
 	double x[2], v[2];		// position and velocity
 	double rho, P;					// density and pressure
 	bool boundary_particle;
@@ -31,7 +32,6 @@ public:
 
 	bool operator==(const SPH_particle& other) const;
 };
-
 
 class SPH_main 
 {
@@ -60,6 +60,8 @@ public:
 
 	double dW(const double r);
 
+	void smooth(SPH_particle *part);
+
 
 	double h;								//smoothing length
 	double h_fac;
@@ -73,6 +75,8 @@ public:
 	double min_x[2], max_x[2];				//dimensions of simulation region
 
 	int max_list[2];
+
+	vector<SPH_particle*> neighbours;
 
 	vector<SPH_particle> particle_list;						//list of all the particles
 

@@ -508,7 +508,7 @@ std::pair<double, double> SPH_main::dvdt(const SPH_particle& p, const std::list<
 
 
 			a.first += a1;
-			a.second += a2;
+			a.second += a2 - this->g;
 
 		}
 	}

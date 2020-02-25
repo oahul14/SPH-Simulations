@@ -74,6 +74,7 @@ public:
 	double dx = 0.2;								//particle initial spacing
 	double rho0 = 1000;// kg/ m^3
 	double mu = 0.001; 
+	double g = 9.81;
 	//to make sure equation is stiff enough
 	int gamma = 7;
 	//artificial speed of sound 

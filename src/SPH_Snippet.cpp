@@ -1,7 +1,7 @@
-#include "SPH_2D.h"
-#include "SPH_2D.cpp"
-#include "file_writer.h"
-#include "file_writer.cpp"
+#include "../includes/SPH_2D.h"
+//#include "SPH_2D.cpp"
+#include "../includes/file_writer.h"
+//#include "file_writer.cpp"
 
 SPH_main domain;
 

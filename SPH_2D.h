@@ -10,7 +10,7 @@ class SPH_main;
 class SPH_particle
 {
 public:		
-	double x1, x2, v1, v2;			// position and velocity
+	double x[2], v[2];		// position and velocity
 	double rho, P;					// density and pressure
 	bool boundary_particle;
 

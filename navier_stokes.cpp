@@ -6,7 +6,7 @@ double dW(const double r, const double h)
 {
     return 2.2;
 }
-std::pair<double, double> dvdt(const SPH_particle& p, const std::list<SPH_particle>& neighbours)
+std::pair<double, double> dvdt(const SPH_particle& p, const std::vector<SPH_particle>& neighbours)
 {
     std::pair<double,double> a(0.0,0.0);
     for (const auto& i : neighbours)
@@ -14,11 +14,11 @@ std::pair<double, double> dvdt(const SPH_particle& p, const std::list<SPH_partic
         if(i==p) continue;
         else
         {
-            double r_ij_1 = p.x1 - i.x1;
-            double r_ij_2 = p.x2 - i.x2;
+            double r_ij_1 = p.x[0] - i.x[0];
+            double r_ij_2 = p.x[1] - i.x[1];
             double dist = std::sqrt(std::pow(r_ij_1,2)+ std::pow(r_ij_2,2));
-            double v_ij_1 = p.v1 - i.v1;
-            double v_ij_2 = p.v2 - i.v2;
+            double v_ij_1 = p.v[0] - i.v[0];
+            double v_ij_2 = p.v[1] - i.v[1];
             double e_ij_1 = r_ij_1/dist;
             double e_ij_2 = r_ij_2/dist;
 
@@ -43,11 +43,11 @@ double drhodt(const SPH_particle& p, const std::list<SPH_particle>& neighbours)
     double D;
     for (const auto& i : neighbours)
     {
-        double r_ij_1 = p.x1 - i.x1;
-        double r_ij_2 = p.x2 - i.x2;
+        double r_ij_1 = p.x[0] - i.x[0];
+        double r_ij_2 = p.x[1] - i.x[1];
         double dist = std::sqrt(std::pow(r_ij_1,2)+ std::pow(r_ij_2,2));
-        double v_ij_1 = p.v1 - i.v1;
-        double v_ij_2 = p.v2 - i.v2;
+        double v_ij_1 = p.v[0] - i.v[0];
+        double v_ij_2 = p.v[1] - i.v[1];
         double e_ij_1 = r_ij_1/dist;
         double e_ij_2 = r_ij_2/dist;
 

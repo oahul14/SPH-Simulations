@@ -26,7 +26,7 @@ public:
 	void calc_index();
 	void redef_P(); //function to update the Pressure
 
-	bool operator==(SPH_particle& other);
+	bool operator==(const SPH_particle& other) const;
 };
 
 

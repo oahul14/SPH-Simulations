@@ -413,7 +413,7 @@ double SPH_main::dW(const double r)
 	return 10 * dw / (7 * M_PI * this->h * this->h);
 }
 
-std::pair<double, double> SPH_main::dvdt(SPH_particle p_i, SPH_particle p_j, const pre_calc_values& vals)
+std::pair<double, double> SPH_main::dvdt(SPH_particle& p_i, SPH_particle& p_j, pre_calc_values& vals)
 {
 	double c1 = -p_j.m * (p_i.P / (p_i.rho * p_i.rho) + p_j.P / (p_j.rho * p_j.rho)) * vals.dWdr;
     double c2 = this->mu * p_j.m * (1 / (p_i.rho * p_i.rho) + 1 / (p_j.rho * p_j.rho)) * vals.dWdr;
@@ -421,8 +421,11 @@ std::pair<double, double> SPH_main::dvdt(SPH_particle p_i, SPH_particle p_j, con
     double a1 = c1 * vals.e_ij_1 +  c2 * vals.v_ij_1 / vals.dist;
     double a2 = c1 * vals.e_ij_2 +  c2 * vals.v_ij_2 / vals.dist;
 
-    if (!p_j.boundary_particle && p_i.boundary_particle) {
+    bool do_swap = !p_j.boundary_particle && p_i.boundary_particle;
+    if (do_swap) {
         swap(p_i, p_j);
+        vals.e_ij_1 = -vals.e_ij_1;
+        vals.e_ij_1 = -vals.e_ij_1;
     }
 
     if (p_j.boundary_particle && !p_i.boundary_particle && vals.dist < 0.7 * this->dx) {
@@ -433,23 +436,25 @@ std::pair<double, double> SPH_main::dvdt(SPH_particle p_i, SPH_particle p_j, con
         // left
         if (p_j.x[0] <= 0 && p_i.x[0] >= p_j.x[0]) {
             a1 += F1;
-            // cout << "left: " << p_j.x[0] << " " << p_j.x[1] << "; ";
         }
         // right
         if (p_j.x[0] >= 20 && p_i.x[0] <= p_j.x[0]) {
             a1 += F1;
-            // cout << "right: " << p_j.x[0] << " " << p_j.x[1] << "; ";
         }
         // top
         if (p_j.x[1] >= 10 && p_i.x[1] <= p_j.x[1]) {
             a2 += F2; 
-            // cout << "top: " << p_j.x[0] << " " << p_j.x[1] << "; ";
         }
         //bottom
         if (p_j.x[1] <= 0 && p_i.x[1] >= p_j.x[1]) {
-            a2 += F2; 
-            // cout << "bot: " << p_j.x[0] << " " << p_j.x[1] << "; ";
+            a2 += F2;
         }
+    }
+
+    if (do_swap) {
+        swap(p_i, p_j);
+        vals.e_ij_1 = -vals.e_ij_1;
+        vals.e_ij_1 = -vals.e_ij_1;
     }
 
     return make_pair(a1, a2);

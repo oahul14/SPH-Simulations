@@ -392,6 +392,11 @@ void SPH_main::timestep()
 	this->max_rho = std::max_element(this->particle_list.cbegin(), this->particle_list.cend(),
                                      [](const SPH_particle& p1, const SPH_particle& p2){ return p1.rho < p2.rho; })->rho;
     const auto offsets = this->offsets(this->particle_list, this->count > 0 && this->count % this->smoothing_interval == 0);
+    double dt_cfl,dt_F,dt_A;
+    dt_cfl = this->h/this->max_vij2;
+    dt_F = sqrt(this->h/this->max_ai2);
+    dt_A = this->h/(this->c0*sqrt(pow(this->max_rho/this->rho0,this->gamma-1)));
+    this->dt = this->Ccfl*min(dt_cfl,dt_F,dt_A);
 
 	// forward euler
 	auto particle_list_it = this->particle_list.begin();

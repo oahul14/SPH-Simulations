@@ -16,11 +16,17 @@ struct pre_calc_values {
 };
 
 struct offset {
-	double dx0, dx1, dv0, dv1, drho;
+	double dx0 = 0;
+	double dx1 = 0;
+	double dv0 = 0;
+	double dv1 = 0;
+	double drho = 0;
 
 	const offset operator+(const offset& other) const;
 	const offset operator+(const offset&& other) const;
 	const offset operator*(const double dt) const;
+
+	void operator+=(const offset& other);
 };
 
 class SPH_particle
@@ -62,23 +68,21 @@ public:
 
 	void place_points(double *min, double *max, string shape = "rectangle");
     
-	vector<vector<list<SPH_particle*>>> search_grid(list<SPH_particle>& particle_list);			//allocates all the points to the search grid (assumes that index has been appropriately updated)
-	list<pair<SPH_particle*, pre_calc_values>> neighbours(const SPH_particle& part, const vector<vector<list<SPH_particle*>>> search_grid);
+	//allocates all the points to the search grid (assumes that index has been appropriately updated)
+	vector<vector<list<pair<SPH_particle*, list<SPH_particle*>::size_type>>>> search_grid(list<SPH_particle>& particle_list);
 
-	offset RHS(const SPH_particle& part, const vector<vector<list<SPH_particle*>>>& search_grid);
+	vector<offset> calculate_offsets(list<SPH_particle>& particles);
+
+	pair<offset, offset> calculate_offset(const SPH_particle& p_i, const SPH_particle& p_j, const pre_calc_values& vals);
 	list<offset> offsets(list<SPH_particle>& particle_list);
 	void timestep();
 
-	pair<double, double> dvdt(const SPH_particle& p, const list<pair<SPH_particle*, pre_calc_values>>& neighbours);
-
-	double drhodt(const SPH_particle& p, const list<pair<SPH_particle*, pre_calc_values>>& neighbours);
-
+	pair<double, double> dvdt(const SPH_particle& p_i, const SPH_particle& p_j, const pre_calc_values& vals);
+	double drhodt(const SPH_particle& p_i, const SPH_particle& p_j, const pre_calc_values& vals);
 	double W(const double r);
-
 	double dW(const double r);
 
 	SPH_particle smooth(const SPH_particle& part, const list<pair<SPH_particle*, pre_calc_values>>& neighbours);
-
 
 	double h;								//smoothing length
 	double h_fac;

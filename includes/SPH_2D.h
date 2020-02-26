@@ -66,7 +66,7 @@ public:
 	list<pair<SPH_particle*, pre_calc_values>> neighbours(const SPH_particle& part, const vector<vector<list<SPH_particle*>>> search_grid);
 
 	offset RHS(const SPH_particle& part, const vector<vector<list<SPH_particle*>>>& search_grid);
-	list<offset> offsets(list<SPH_particle>& particle_list, const bool smoothing=false);
+	list<offset> offsets(list<SPH_particle>& particle_list);
 	void timestep();
 
 	pair<double, double> dvdt(const SPH_particle& p, const list<pair<SPH_particle*, pre_calc_values>>& neighbours);

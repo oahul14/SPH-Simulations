@@ -356,30 +356,12 @@ offset SPH_main::RHS(const SPH_particle& part, const vector<vector<list<SPH_part
     return result;
 }
 
-list<offset> SPH_main::offsets(list<SPH_particle>& particle_list, const bool smoothing) {
+list<offset> SPH_main::offsets(list<SPH_particle>& particle_list) {
 	list<offset> offsets;
 
 	const auto search_grid = this->search_grid(particle_list);
-
-    if(smoothing)
-    {
-        list<SPH_particle> smoothed_state;
-        
-        for (const auto& p : this->particle_list) {
-            smoothed_state.push_back(this->smooth(p, this->neighbours(p, search_grid)));
-        }
-        assert(smoothed_state.size() == this->particle_list.size());
-
-        for (const auto& p : smoothed_state) {
-		    offsets.push_back(RHS(p, search_grid));
-	    }
-
-        this->particle_list = move(smoothed_state);
-    }
-    else {
-        for (const auto& p : particle_list) {
-		    offsets.push_back(RHS(p, search_grid));
-	    }
+    for (const auto& p : particle_list) {
+        offsets.push_back(RHS(p, search_grid));
     }
 
     assert(offsets.size() == particle_list.size());
@@ -388,15 +370,16 @@ list<offset> SPH_main::offsets(list<SPH_particle>& particle_list, const bool smo
 
 
 void SPH_main::timestep() 
-{
+{   
 	this->max_rho = std::max_element(this->particle_list.cbegin(), this->particle_list.cend(),
                                      [](const SPH_particle& p1, const SPH_particle& p2){ return p1.rho < p2.rho; })->rho;
-    const auto offsets = this->offsets(this->particle_list, this->count > 0 && this->count % this->smoothing_interval == 0);
-    double dt_cfl,dt_F,dt_A;
-    dt_cfl = this->h/this->max_vij2;
-    dt_F = sqrt(this->h/this->max_ai2);
-    dt_A = this->h/(this->c0*sqrt(pow(this->max_rho/this->rho0,this->gamma-1)));
-    this->dt = this->Ccfl*min(dt_cfl,dt_F,dt_A);
+    
+    const auto offsets = this->offsets(this->particle_list);
+
+    const auto dt_cfl = this->h/this->max_vij2;
+    const auto dt_F = sqrt(this->h/this->max_ai2);
+    const auto dt_A = this->h/(this->c0*sqrt(pow(this->max_rho/this->rho0,this->gamma-1)));
+    this->dt = this->Ccfl * min(dt_cfl, min(dt_F, dt_A));
 
 	// forward euler
 	auto particle_list_it = this->particle_list.begin();
@@ -404,6 +387,20 @@ void SPH_main::timestep()
 	while(particle_list_it != this->particle_list.end()) {
 		*particle_list_it++ +=  *offsets_it++ * this->dt;
 	}
+
+    /* smoothing */
+    if (this->count > 0 && this->count % this->smoothing_interval == 0)
+    {
+        list<SPH_particle> smoothed_state;
+        const auto search_grid = this->search_grid(particle_list);
+        
+        for (const auto& p : this->particle_list) {
+            smoothed_state.push_back(this->smooth(p, this->neighbours(p, search_grid)));
+        }
+        assert(smoothed_state.size() == this->particle_list.size());
+
+        this->particle_list.swap(smoothed_state);
+    }
 
 	// improved euler
 	// const auto offsets_1 = this->offsets(this->particle_list);
@@ -510,7 +507,7 @@ SPH_particle SPH_main::smooth(const SPH_particle& part, const list<pair<SPH_part
 
     for (const auto& [part, vals] : neighbours)
     {
-        w = W(vals.dist);
+        w = this->W(vals.dist);
         sum_w += w;
         sum_wdrho += w / part->rho;
     }

@@ -2,11 +2,11 @@
 #include <vector>
 #include <string>
 
-#include "file_writer.h"
+#include "../includes/file_writer.h"
 
-std::string scalar_to_string(const char* name,
-			     std::vector<SPH_particle> *particle_list,
-			     double (*func)(SPH_particle)) {
+std::string scalar_to_string(const std::string name,
+			                       const std::list<SPH_particle>& particle_list,
+			                       double (*func)(const SPH_particle&)) {
 
   /**
      Return scalar variable from function func as string of named 
@@ -23,19 +23,19 @@ std::string scalar_to_string(const char* name,
   s += name;
   s += "\" format=\"ascii\">\n";
 
-  for (auto p=particle_list->begin(); p!=particle_list->end(); ++p) {
+  for (const auto& p : particle_list) {
     s += " ";
-    s += std::to_string(func(*p));
+    s += std::to_string(func(p));
   }
   s += "\n";
   s += "</DataArray>\n";
        
-       return s;
+  return s;
 }
 
-std::string vector_to_string(const char* name,
-			     std::vector<SPH_particle> *particle_list,
-			     double (*func)(SPH_particle, int)) {
+std::string vector_to_string(const std::string name,
+                             const std::list<SPH_particle>& particle_list,
+                             double (*func)(const SPH_particle&, int)) {
 
   /** 
      Return vector variable from function func as string of named 
@@ -52,17 +52,17 @@ std::string vector_to_string(const char* name,
   s += name;
   s += "\" NumberOfComponents=\"3\" format=\"ascii\">\n";
 
-  for (auto p=particle_list->begin(); p!=particle_list->end(); ++p) {
+  for (const auto& p : particle_list) {
     for (int i=0; i<2; ++i) {
       s += " ";
-      s += std::to_string(func(*p, i));
+      s += std::to_string(func(p, i));
     }
     s += " 0.000000";
   }
   s += "\n";
   s += "</DataArray>\n";
        
-       return s;
+  return s;
 }
 
 std::string range_as_string(int n, int offset) {
@@ -86,24 +86,23 @@ std::string range_as_string(int n, int offset) {
   return  s;
 }
 
-double get_velocity(SPH_particle p, int i) {
+double get_velocity(const SPH_particle& p, int i) {
   /* Return ith element of velocity for particle p */
   return p.v[i];
 }
 
-double get_position(SPH_particle p, int i) {
+double get_position(const SPH_particle& p, int i) {
   /* Return ith element of position for particle p */
   return p.x[i];
 }
 
-double get_pressure(SPH_particle p) {
+double get_pressure(const SPH_particle& p) {
   /* Return pressure for particle p */
   return p.P;
 }
 
 
-int write_file(const char *filename,
-	       std::vector<SPH_particle> *particle_list) {
+int write_file(const std::string filename, const std::list<SPH_particle>& particle_list) {
 
   /*
     
@@ -118,7 +117,7 @@ int write_file(const char *filename,
   
   fs << "<VTKFile type=\"PolyData\">\n";
   fs << "<PolyData>\n";
-  fs << "<Piece NumberOfPoints=\""<< particle_list->size() << "\" NumberOfVerts=\"" << particle_list->size() <<"\" NumberOfLines=\"0\" NumberOfStrips=\"0\" NumberOfPolys=\"0\">\n";
+  fs << "<Piece NumberOfPoints=\""<< particle_list.size() << "\" NumberOfVerts=\"" << particle_list.size() <<"\" NumberOfLines=\"0\" NumberOfStrips=\"0\" NumberOfPolys=\"0\">\n";
   fs << "<PointData>\n";
   fs << scalar_to_string("Pressure", particle_list, get_pressure);
   fs << vector_to_string("Velocity", particle_list, get_velocity);
@@ -128,10 +127,10 @@ int write_file(const char *filename,
   fs << "</Points>\n";
   fs << "<Verts>\n";
   fs << "<DataArray type=\"Int32\" Name=\"connectivity\" format=\"ascii\">\n";
-  fs << range_as_string(particle_list->size(), 0);
+  fs << range_as_string(particle_list.size(), 0);
   fs << "</DataArray>\n";
   fs << "<DataArray type=\"Int32\" Name=\"offsets\" format=\"ascii\">\n";
-  fs << range_as_string(particle_list->size(), 1);
+  fs << range_as_string(particle_list.size(), 1);
   fs << "</DataArray>\n";
   fs << "</Verts>\n";
   fs << "</Piece>\n";

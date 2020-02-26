@@ -344,6 +344,7 @@ offset SPH_main::RHS(const SPH_particle& part, const vector<vector<list<SPH_part
 	offset result;
 
 	const auto [dv1, dv2] = this->dvdt(part, neighbours);
+    this->max_ai2 = max(this->max_ai2, dv1*dv1 + dv2*dv2);
     result.dv0 = move(dv1);
     result.dv1 = move(dv2);
 
@@ -388,7 +389,9 @@ list<offset> SPH_main::offsets(list<SPH_particle>& particle_list, const bool smo
 
 void SPH_main::timestep() 
 {
-	const auto offsets = this->offsets(this->particle_list, this->count > 0 && this->count % this->smoothing_interval == 0);
+	this->max_rho = std::max_element(this->particle_list.cbegin(), this->particle_list.cend(),
+                                     [](const SPH_particle& p1, const SPH_particle& p2){ return p1.rho < p2.rho; })->rho;
+    const auto offsets = this->offsets(this->particle_list, this->count > 0 && this->count % this->smoothing_interval == 0);
 
 	// forward euler
 	auto particle_list_it = this->particle_list.begin();

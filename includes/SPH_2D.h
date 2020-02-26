@@ -90,6 +90,8 @@ public:
 	int gamma = 7;
 	//artificial speed of sound 
 	double c0 = 20;
+	// this parameter is in [0.1,0,3]
+	double Ccfl = 0.2;
 	double min_x[2], max_x[2];
 	bool stencil = false;
 

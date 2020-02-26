@@ -22,7 +22,10 @@ int main(int argc, char* argv[])
 
 	while(domain.t < t_max) {
 		domain.timestep();
-		write_file("particles_" + std::to_string(domain.t) + ".vtp", domain.particle_list);
+		if (domain.count % domain.output_intervval == 0)
+		{
+			write_file("particles_" + std::to_string(domain.t) + ".vtp", domain.particle_list);
+		}
 	}
 	write_file("particles_" + std::to_string(domain.t) + ".vtp", domain.particle_list);
 	

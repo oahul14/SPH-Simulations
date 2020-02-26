@@ -5,17 +5,17 @@
 #include <cassert>
 #include <chrono>
 
-// void test_timestep(int iterations = 3, SPH_main& domain) {
-// 	const double t_max = iterations*domain.dt;
-// 	std::cout << "dt = " << domain.dt << std::endl;
-// 	write_file("particles_" + std::to_string(domain.t) + ".vtp", domain.particle_list);
+void test_timestep(SPH_main& domain, int iterations = 3) {
+	const double t_max = iterations*domain.dt;
+	std::cout << "dt = " << domain.dt << std::endl;
+	write_file("particles_" + std::to_string(domain.t) + ".vtp", domain.particle_list);
 
-// 	while(domain.t < t_max) {
-// 		domain.timestep();
-// 		write_file("particles_" + std::to_string(domain.t) + ".vtp", domain.particle_list);
-// 	}
-// 	write_file("particles_" + std::to_string(domain.t) + ".vtp", domain.particle_list);
-// }
+	while(domain.t < t_max) {
+		domain.timestep();
+		write_file("particles_" + std::to_string(domain.t) + ".vtp", domain.particle_list);
+	}
+	write_file("particles_" + std::to_string(domain.t) + ".vtp", domain.particle_list);
+}
 
 void test_P(SPH_main& domain) {
 		//for a single particle
@@ -74,14 +74,13 @@ int main(int argc, char* argv[])
 	test_P(domain);
 	test_W(domain);
 	test_dW(domain);
-	//test_timestep(domain);
 
-	// if (argc > 1) {
-	// 	test_timestep(std::stoi(argv[1]), domain);
-	// }
-	// else {
-	// 	//test_timestep(domain)
-	// }
+	if (argc > 1) {
+		test_timestep(domain, std::stoi(argv[1]));
+	}
+	else {
+		test_timestep(domain);
+	}
 	
 	
 	return 0;

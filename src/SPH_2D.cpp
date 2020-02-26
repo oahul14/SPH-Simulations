@@ -326,16 +326,16 @@ void SPH_main::timestep()
     this->max_vij2 = 0;
     this->max_ai2 = 0;
 
-    const auto offsets = this->calculate_offsets(this->particle_list);
+    const auto offsets_1 = this->calculate_offsets(this->particle_list);
 
     const auto dt_cfl = this->h/sqrt(this->max_vij2);
     const auto dt_F = sqrt(this->h/sqrt(this->max_ai2));
     const auto dt_A = this->h/(this->c0*sqrt(pow(this->max_rho/this->rho0,this->gamma-1)));
     this->dt = this->Ccfl * min(dt_cfl, min(dt_F, dt_A));
 
-	// forward euler
+	/* forward euler */
 	auto particle_list_it = this->particle_list.begin();
-	auto offsets_it = offsets.cbegin();
+	auto offsets_it = offsets_1.cbegin();
 	while(particle_list_it != this->particle_list.end()) {
 		*particle_list_it++ +=  *offsets_it++ * this->dt;
 	}
@@ -354,32 +354,23 @@ void SPH_main::timestep()
     //     this->particle_list.swap(smoothed_state);
     // }
 
-	// improved euler
-	// const auto offsets_1 = this->offsets(this->particle_list);
+	// /* improved euler */
 	// auto next_state_star = this->particle_list;
 
 	// auto next_state_star_it = next_state_star.begin();
 	// auto offsets_1_it = offsets_1.cbegin();
 	// while(next_state_star_it != next_state_star.end()) {
-	// 	*next_state_star_it = *next_state_star_it + (*offsets_1_it * this->dt);
-	// 	next_state_star_it->redef_P();
-	// 	next_state_star_it++;
-	// 	offsets_1_it++;
+	// 	*next_state_star_it++ += *offsets_1_it++ * this->dt;
+    // }
 
-	// const auto offsets_2 = this->offsets(next_state_star);
+	// const auto offsets_2 = this->calculate_offsets(next_state_star);
 
 	// auto particle_list_it = this->particle_list.begin();
 	// offsets_1_it = offsets_1.cbegin();
 	// auto offsets_2_it = offsets_2.cbegin();
 
 	// while(particle_list_it != this->particle_list.end()) {
-
-	// 	*particle_list_it = *particle_list_it + (*offsets_1_it + *offsets_2_it) * (0.5*this->dt);
-	// 	particle_list_it->redef_P();
-
-	// 	particle_list_it++;
-	// 	offsets_1_it++;
-	// 	offsets_2_it++;
+	// 	*particle_list_it++ += (*offsets_1_it++ + *offsets_2_it++) * (0.5*this->dt);
 	// }
 
     this->t += this->dt;

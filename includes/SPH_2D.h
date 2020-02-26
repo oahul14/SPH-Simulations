@@ -84,7 +84,7 @@ public:
 	list<offset> offsets(list<SPH_particle>& particle_list);
 	void timestep();
 
-	pair<double, double> dvdt(const SPH_particle& p_i, const SPH_particle& p_j, const pre_calc_values& vals);
+	pair<double, double> dvdt(SPH_particle p_i, SPH_particle p_j, const pre_calc_values& vals);
 	double drhodt(const SPH_particle& p_i, const SPH_particle& p_j, const pre_calc_values& vals);
 	double W(const double r);
 	double dW(const double r);

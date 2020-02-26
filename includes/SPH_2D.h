@@ -11,6 +11,14 @@ using namespace std;
 
 class SPH_main;
 
+struct offset {
+	double dx0, dx1, dv0, dv1, drho;
+
+	const offset operator+(const offset& other) const;
+	const offset operator+(const offset&& other) const;
+	const offset operator*(const double dt) const;
+};
+
 class SPH_particle
 {
 
@@ -23,6 +31,7 @@ public:
 	//double rho0 = 1000;// kg/ m^3
 
 	static SPH_main *main_data;		// link to SPH_main class so that it can be used in calc_index
+	static double B;
 
 	int list_num[2];				// index in neighbour finding array
 	double m;
@@ -34,10 +43,10 @@ public:
 
 	bool operator==(const SPH_particle& other) const;
 
-	const SPH_particle operator+(const SPH_particle& other) const;
-	const SPH_particle operator+(const SPH_particle&& other) const;
-	const SPH_particle operator*(const double dt) const;
+	void operator+=(const offset& delta);
 };
+
+
 
 
 class SPH_main 
@@ -54,8 +63,8 @@ public:
 	vector<vector<list<SPH_particle*>>> search_grid(list<SPH_particle>& particle_list);			//allocates all the points to the search grid (assumes that index has been appropriately updated)
 	std::list<SPH_particle*> neighbours(const SPH_particle& part, const vector<vector<list<SPH_particle*>>> search_grid);
 
-	SPH_particle RHS(const SPH_particle& part, const vector<vector<list<SPH_particle*>>>& search_grid);
-	std::vector<SPH_particle> offsets(std::list<SPH_particle>& particle_list);
+	offset RHS(const SPH_particle& part, const vector<vector<list<SPH_particle*>>>& search_grid);
+	std::vector<offset> offsets(std::list<SPH_particle>& particle_list);
 	void timestep();
 
 	std::pair<double, double> dvdt(const SPH_particle& p, const std::list<SPH_particle*>& neighbours);

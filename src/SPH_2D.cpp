@@ -17,8 +17,10 @@ in some libraries the M_PI is not include so we included the #ifndef
 #include <iostream>
 #include <cassert>
 
+using namespace std;
 
 SPH_main *SPH_particle::main_data;
+double SPH_particle::B;
 
 SPH_particle::SPH_particle()
 {
@@ -52,76 +54,71 @@ void SPH_particle::redef_P()
 {
 	//implementtaion of the Tait Equition
 	//relates Pressure to density
-	double B = (main_data->rho0 * pow(main_data->c0, 2)) / main_data->gamma;
-	P = B * ((main_data->rho0 / rho) - 1);
+	this->P = this->B * ((this->main_data->rho0 / this->rho) - 1);
 }
 
-const SPH_particle SPH_particle::operator+(const SPH_particle& other) const {
-	SPH_particle sum;
-	sum.rho = this->rho + other.rho;
-	if (this->boundary_particle) {
-		sum.x[0] = this->x[0];
-		sum.x[1] = this->x[1];
-		sum.v[0] = this->v[0];
-		sum.v[1] = this->v[1];
-	}
-	else {
-		sum.x[0] = this->x[0] + other.x[0];
-		sum.x[1] = this->x[1] + other.x[1];
-		sum.v[0] = this->v[0] + other.v[0];
-		sum.v[1] = this->v[1] + other.v[1];
-	}
+const offset offset::operator+(const offset& other) const {
+	offset sum;
+	sum.drho = this->drho + other.drho;
+    sum.dx0 = this->dx0 + other.dx0;
+    sum.dx1 = this->dx1 + other.dx1;
+    sum.dv0 = this->dv0 + other.dv0;
+    sum.dv1 = this->dv1 + other.dv1;
 
 	return sum;
 }
 
-const SPH_particle SPH_particle::operator+(const SPH_particle&& other) const {
-	SPH_particle sum = other;
-	sum.rho = this->rho + other.rho;
-	if (this->boundary_particle) {
-		sum.x[0] = this->x[0];
-		sum.x[1] = this->x[1];
-		sum.v[0] = this->v[0];
-		sum.v[1] = this->v[1];
-	}
-	else {
-		sum.x[0] = this->x[0] + other.x[0];
-		sum.x[1] = this->x[1] + other.x[1];
-		sum.v[0] = this->v[0] + other.v[0];
-		sum.v[1] = this->v[1] + other.v[1];
-	}
+const offset offset::operator+(const offset&& other) const {
+	offset sum = other;
+	sum.drho = this->drho + other.drho;
+    sum.dx0 = this->dx0 + other.dx0;
+    sum.dx1 = this->dx1 + other.dx1;
+    sum.dv0 = this->dv0 + other.dv0;
+    sum.dv1 = this->dv1 + other.dv1;
 
 	return sum;
 }
 
-const SPH_particle SPH_particle::operator*(const double dt) const {
-	SPH_particle result;
-	result.x[0] = this->x[0] * dt;
-	result.x[1] = this->x[1] * dt;
-	result.v[0] = this->v[0] * dt;
-	result.v[1] = this->v[1] * dt;
-	result.rho = this->rho * dt;
+const offset offset::operator*(const double dt) const {
+	offset product;
+	product.drho = this->drho * dt;
+    product.dx0 = this->dx0 * dt;
+    product.dx1 = this->dx1 * dt;
+    product.dv0 = this->dv0 * dt;
+    product.dv1 = this->dv1 * dt;
 
-	return result;
+	return product;
+}
+
+void SPH_particle::operator+=(const offset& delta) {
+    this->rho += delta.drho;
+    this->redef_P();
+    if (!this->boundary_particle) {
+        this->x[0] += delta.dx0;
+        this->x[1] += delta.dx1;
+        this->v[0] += delta.dv0;
+        this->v[1] += delta.dv1;
+    }
 }
 
 SPH_main::SPH_main()
 {
 	SPH_particle::main_data = this;
+    SPH_particle::B = (this->rho0 * pow(this->c0, 2)) / this->gamma;
 }
 
 void SPH_main::set_values(void)
 {
-	min_x[0] = 0.0;
-	min_x[1] = 0.0;
+	this->min_x[0] = 0.0;
+	this->min_x[1] = 0.0;
 
-	max_x[0] = 20.0;
-	max_x[1] = 10.0;
+	this->max_x[0] = 20.0;
+	this->max_x[1] = 10.0;
 
-	dx = 0.2;
+	this->dx = 0.2;
 	
-	h_fac = 1.3;
-	h = dx*h_fac;
+	this->h_fac = 1.3;
+	this->h = this->dx * this->h_fac;
     this->dt = 0.1*this->h/this->c0;
 }
 
@@ -293,7 +290,7 @@ std::list<SPH_particle*> SPH_main::neighbours(const SPH_particle& part, const ve
 }
 
 
-SPH_particle SPH_main::RHS(const SPH_particle& part, const vector<vector<list<SPH_particle*>>>& search_grid)					//iterates over all particles within 2h of part - can be made more efficient using a stencil and realising that all interactions are symmetric
+offset SPH_main::RHS(const SPH_particle& part, const vector<vector<list<SPH_particle*>>>& search_grid)					//iterates over all particles within 2h of part - can be made more efficient using a stencil and realising that all interactions are symmetric
 {
     /*double dist;			//distance between particles
     double dn[2];			//vector from 1st to 2nd particle
@@ -361,22 +358,22 @@ SPH_particle SPH_main::RHS(const SPH_particle& part, const vector<vector<list<SP
 
 	const auto neighbours = this->neighbours(part, search_grid);
 
-	SPH_particle result;
+	offset result;
 
 	const auto [dv1, dv2] = this->dvdt(part, neighbours);
-    result.v[0] = move(dv1);
-    result.v[1] = move(dv2);
+    result.dv0 = move(dv1);
+    result.dv1 = move(dv2);
 
-    result.rho = this->drhodt(part, neighbours);
+    result.drho = this->drhodt(part, neighbours);
 
-    result.x[0] = part.v[0];
-    result.x[1] = part.v[1];
+    result.dx0 = part.v[0];
+    result.dx1 = part.v[1];
 
     return result;
 }
 
-std::vector<SPH_particle> SPH_main::offsets(std::list<SPH_particle>& particle_list) {
-	std::vector<SPH_particle> offsets;
+std::vector<offset> SPH_main::offsets(std::list<SPH_particle>& particle_list) {
+	std::vector<offset> offsets;
 	offsets.reserve(particle_list.size());
 
 	const auto search_grid = this->search_grid(particle_list);
@@ -397,10 +394,7 @@ void SPH_main::timestep()
 	auto particle_list_it = this->particle_list.begin();
 	auto offsets_it = offsets.cbegin();
 	while(particle_list_it != this->particle_list.end()) {
-		*particle_list_it = *particle_list_it + (*offsets_it * this->dt);
-		particle_list_it->redef_P();
-		particle_list_it++;
-		offsets_it++;
+		*particle_list_it++ +=  *offsets_it++ * this->dt;
 	}
 
 	// improved euler

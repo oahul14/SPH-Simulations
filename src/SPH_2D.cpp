@@ -333,6 +333,9 @@ void SPH_main::timestep()
     const auto dt_A = this->h/(this->c0*sqrt(pow(this->max_rho/this->rho0,this->gamma-1)));
     this->dt = this->Ccfl * min(dt_cfl, min(dt_F, dt_A));
 
+    // TODO implement switch between timestepping methods with enum
+    // TODO implement linear multistep (i.e. combine previous step with this step) -> faster and equally accurate compared to improved euler
+
 	/* forward euler */
 	auto particle_list_it = this->particle_list.begin();
 	auto offsets_it = offsets_1.cbegin();
@@ -340,7 +343,8 @@ void SPH_main::timestep()
 		*particle_list_it++ +=  *offsets_it++ * this->dt;
 	}
 
-    /* smoothing */
+    // TODO: update smooting for new fast neighbour iteration
+    ///* smoothing */
     // if (this->count > 0 && this->count % this->smoothing_interval == 0)
     // {
     //     list<SPH_particle> smoothed_state;
@@ -400,6 +404,7 @@ double SPH_main::W(const double r)
 }
 
 //differential of the cubic spline
+//TODO: ask Stephen if this is the correct derivative, i.e. dW/dq(q), or if it is \del W/\del r(r, h)
 double SPH_main::dW(const double r)
 {
 	double q = r / this->h;
@@ -421,7 +426,7 @@ std::pair<double, double> SPH_main::dvdt(SPH_particle& p_i, SPH_particle& p_j, p
     double a1 = c1 * vals.e_ij_1 +  c2 * vals.v_ij_1 / vals.dist;
     double a2 = c1 * vals.e_ij_2 +  c2 * vals.v_ij_2 / vals.dist;
 
-    bool do_swap = !p_j.boundary_particle && p_i.boundary_particle;
+    bool do_swap = !p_j.boundary_particle && p_i.boundary_particle && vals.dist < 0.7 * this->dx;
     if (do_swap) {
         swap(p_i, p_j);
         vals.e_ij_1 = -vals.e_ij_1;
@@ -465,6 +470,7 @@ double SPH_main::drhodt(const SPH_particle& p_i, const SPH_particle& p_j, const 
 	return p_j.m * vals.dWdr * (vals.v_ij_1 * vals.e_ij_1 + vals.v_ij_2 * vals.e_ij_2);
 }
 
+// TODO: update smooting for new fast neighbour iteration
 SPH_particle SPH_main::smooth(const SPH_particle& part, const list<pair<SPH_particle*, pre_calc_values>>& neighbours)
 {
     auto smoothed = part;

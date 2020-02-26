@@ -3,6 +3,7 @@
 #include <string>
 #include <iostream>
 #include <cassert>
+#include <chrono>
 
 // void test_timestep(int iterations = 3, SPH_main& domain) {
 // 	const double t_max = iterations*domain.dt;
@@ -37,6 +38,29 @@ void test_P(SPH_main& domain) {
 
 }
 
+
+void test_W(SPH_main& domain)
+{
+	//cout<<"H "<<domain.h<<"\n";
+	//test case fof q>2
+	assert (domain.W(0.65) == 0);
+	//test case for 1<p<2
+	//cout<<" result2 : "<< domain.W(1.5*0.26)<<"\n";
+	assert((domain.W(0.39)-0.210) <1e3);
+	//test case for p<1
+	//cout<<"result 3: "<< domain.W(0.13)<<endl;
+	assert((domain.W(0.13) - 4.8 )<0.1);
+	//6.726
+}
+
+void test_dW(SPH_main& domain)
+{
+	double r = 0.13;
+	double h = domain.h;
+	cout<< " Wolfram "<< (-3*r)/(2*h*h)<<"\n";
+	cout <<"ours "<< domain.dW(r)<<"\n";
+}
+
 int main(int argc, char* argv[])
 {
 	SPH_main domain;
@@ -48,6 +72,8 @@ int main(int argc, char* argv[])
 	domain.place_points(domain.min_x, domain.max_x);				//places initial points - will need to be modified to include boundary points and the specifics of where the fluid is in the domain
 	
 	test_P(domain);
+	test_W(domain);
+	test_dW(domain);
 	//test_timestep(domain);
 
 	// if (argc > 1) {

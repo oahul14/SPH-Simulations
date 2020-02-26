@@ -253,7 +253,7 @@ list<pair<SPH_particle*, pre_calc_values>> SPH_main::neighbours(const SPH_partic
     double v_ij_1, v_ij_2;
 	list<pair<SPH_particle*, pre_calc_values>> neighbours;
 
-	for (int i = max(part.list_num[0] - 1, 0); i < min(part.list_num[0] + 2, this->max_list[0]); i++) {
+    for (int i = max(part.list_num[0] - 1, 0); i < min(part.list_num[0] + 2, this->max_list[0]); i++) {
 		for (int j = max(part.list_num[1] - 1, 0); j < min(part.list_num[1] + 2, this->max_list[1]); j++) {
 			for (const auto other_part : search_grid[i][j]) {
                 r_ij_1 = part.x[0] - other_part->x[0];
@@ -373,11 +373,13 @@ void SPH_main::timestep()
 {   
 	this->max_rho = std::max_element(this->particle_list.cbegin(), this->particle_list.cend(),
                                      [](const SPH_particle& p1, const SPH_particle& p2){ return p1.rho < p2.rho; })->rho;
+    this->max_vij2 = 0;
+    this->max_ai2 = 0;
     
     const auto offsets = this->offsets(this->particle_list);
 
-    const auto dt_cfl = this->h/this->max_vij2;
-    const auto dt_F = sqrt(this->h/this->max_ai2);
+    const auto dt_cfl = this->h/sqrt(this->max_vij2);
+    const auto dt_F = sqrt(this->h/sqrt(this->max_ai2));
     const auto dt_A = this->h/(this->c0*sqrt(pow(this->max_rho/this->rho0,this->gamma-1)));
     this->dt = this->Ccfl * min(dt_cfl, min(dt_F, dt_A));
 

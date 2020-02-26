@@ -389,8 +389,8 @@ std::vector<SPH_particle> SPH_main::offsets(std::list<SPH_particle>& particle_li
 }
 
 
-void SPH_main::timestep() {
-
+void SPH_main::timestep() 
+{
 	const auto offsets = this->offsets(this->particle_list);
 
 	// forward euler
@@ -432,20 +432,24 @@ void SPH_main::timestep() {
 	// }
 
     this->t += this->dt;
+    if(count%this->smoothing_interval == 0)
+    {
+            /* smoothing */
 
-    /* smoothing */
+        std::list<SPH_particle> smoothed_state;
 
-    std::list<SPH_particle> smoothed_state;
+        const auto grid = this->search_grid(this->particle_list);	
+        
+        for (const auto& p : this->particle_list) {
+            smoothed_state.push_back(this->smooth(p, this->neighbours(p, grid)));
+        }
 
-    const auto grid = this->search_grid(this->particle_list);	
-    
-    for (const auto& p : this->particle_list) {
-        smoothed_state.push_back(this->smooth(p, this->neighbours(p, grid)));
+        assert(smoothed_state.size() == this->particle_list.size());
+
+        this->particle_list = move(smoothed_state);
+
     }
-
-    assert(smoothed_state.size() == this->particle_list.size());
-
-    this->particle_list = move(smoothed_state);
+    this->count ++;
 }
 
 bool SPH_particle::operator==(const SPH_particle& other) const

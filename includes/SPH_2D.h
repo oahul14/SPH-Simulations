@@ -84,7 +84,13 @@ public:
 
 	double t = 0;	
 	double dt;
-	double smoothing_interval;
+	int count = 0;
+	// set the smoothing intervel in fix number
+	int smoothing_interval = 10;
+
+	//set the ouput intervel
+
+	int output_intervval = 10;
 
 	int max_list[2];
 

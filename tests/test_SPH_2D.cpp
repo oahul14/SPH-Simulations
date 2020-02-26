@@ -2,6 +2,7 @@
 #include "file_writer.h"
 #include <string>
 #include <iostream>
+#include <chrono>
 
 int main(int argc, char* argv[])
 {
@@ -20,6 +21,7 @@ int main(int argc, char* argv[])
 	const double t_max = iterations*domain.dt;
 	std::cout << "dt = " << domain.dt << std::endl;
 
+	const auto start = std::chrono::high_resolution_clock::now();
 	while(domain.t < t_max) {
 		domain.timestep();
 		if (domain.count % domain.output_intervval == 0)
@@ -27,6 +29,8 @@ int main(int argc, char* argv[])
 			write_file("particles_" + std::to_string(domain.t) + ".vtp", domain.particle_list);
 		}
 	}
+	const auto end = std::chrono::high_resolution_clock::now();
+	std::cout << "runtime [s] = " << (end-start).count() / 1e9 << endl;
 	write_file("particles_" + std::to_string(domain.t) + ".vtp", domain.particle_list);
 	
 	return 0;

@@ -139,12 +139,10 @@ void SPH_main::initialise_grid(void)
 
 void SPH_main::place_points(double *min, double *max, string shape)
 {
-    cout << min[0] << " " << min[1] << endl;
 	double x[2] = { min[0], min[1] };
 
 	SPH_particle water_particle(rho0, false);
     SPH_particle bound_particle(rho0, true);
-    SPH_particle empty_particle(0, false);
 
     if (shape == "rectangle")
     {
@@ -158,8 +156,6 @@ void SPH_main::place_points(double *min, double *max, string shape)
                     for (int i = 0; i < 2; i++)
                         bound_particle.x[i] = x[i];
                     particle_list.push_back(bound_particle);
-                    // cout << particle_list[particle_list.size() - 1].boundary_particle;
-                    // cout << "B ";
                     x[0] += dx;
                 }
                 else if ((x[0] <= 3 && x[1] <= 5) || (3 <= x[0] && x[1] <= 2)) 
@@ -167,22 +163,13 @@ void SPH_main::place_points(double *min, double *max, string shape)
                     for (int i = 0; i < 2; i++)
                         water_particle.x[i] = x[i];
                     particle_list.push_back(water_particle);
-                    // cout << particle_list[particle_list.size() - 1].boundary_particle;
-                    // cout << "W ";
                     x[0] += dx;
                 }
                 else 
                 {
-                    // for (int i = 0; i < 2; i++)
-                    //     empty_particle.x[i] = x[i];
-                    // empty_particle.calc_index();
-                    // particle_list.push_back(empty_particle);
-                    // cout << particle_list[particle_list.size() - 1].boundary_particle;
-                    // cout << "E ";
                     x[0] += dx;
                 }
             }
-            // cout << endl;
             x[1] += dx;
         }
     }
@@ -212,8 +199,6 @@ void SPH_main::place_points(double *min, double *max, string shape)
                         bound_particle.x[i] = x[i];
                     bound_particle.calc_index();
                     particle_list.push_back(bound_particle);
-                    // cout <<  particle_list[particle_list.size() - 1].boundary_particle;
-                    // cout << "B ";
                     x[0] += dx;
                 }
                 else if ((x[0] >= shoaling_x1_start) && (x[0] <= shoaling_x1_end) && (x[1] >= shoaling_x2_start) && (x[1] <= shoaling_x2_end))
@@ -222,8 +207,6 @@ void SPH_main::place_points(double *min, double *max, string shape)
                         bound_particle.x[i] = x[i];
                     bound_particle.calc_index();
                     particle_list.push_back(bound_particle);
-                    // cout <<  particle_list[particle_list.size() - 1].boundary_particle;
-                    // cout << "B ";
                     x[0] += dx;
                 }
                 else if ((x[0] <= 3 && x[1] <= 5) || (3 <= x[0] && x[1] <= 2)) 
@@ -232,18 +215,10 @@ void SPH_main::place_points(double *min, double *max, string shape)
                         water_particle.x[i] = x[i];
                     water_particle.calc_index();
                     particle_list.push_back(water_particle);
-                    // cout << particle_list[particle_list.size() - 1].boundary_particle;
-                    // cout << "W ";
                     x[0] += dx;
                 }
                 else 
                 {
-                    for (int i = 0; i < 2; i++)
-                        empty_particle.x[i] = x[i];
-                    empty_particle.calc_index();
-                    particle_list.push_back(empty_particle);
-                    // cout << particle_list[particle_list.size() - 1].boundary_particle;
-                    // cout << "E ";
                     x[0] += dx;
                 }
             }
@@ -271,16 +246,25 @@ vector<vector<list<SPH_particle*>>> SPH_main::search_grid(list<SPH_particle>& pa
 	return search_grid;
 }
 
-std::list<SPH_particle*> SPH_main::neighbours(const SPH_particle& part, const vector<vector<list<SPH_particle*>>> search_grid) {
-    double dist;			//distance between particles
-	std::list<SPH_particle*> neighbours;
+// [p, dist, e_ij_1, e_ij_2]
+list<pair<SPH_particle*, pre_calc_values>> SPH_main::neighbours(const SPH_particle& part, const vector<vector<list<SPH_particle*>>> search_grid) {
+    double dist;   // distance between particles
+    double r_ij_1, r_ij_2; // unit vector between particles
+    double v_ij_1, v_ij_2;
+	list<pair<SPH_particle*, pre_calc_values>> neighbours;
 
 	for (int i = max(part.list_num[0] - 1, 0); i < min(part.list_num[0] + 2, this->max_list[0]); i++) {
 		for (int j = max(part.list_num[1] - 1, 0); j < min(part.list_num[1] + 2, this->max_list[1]); j++) {
 			for (const auto other_part : search_grid[i][j]) {
-				dist = std::sqrt(std::pow(part.x[0] - other_part->x[0], 2) + std::pow(part.x[1] - other_part->x[1], 2));
+                r_ij_1 = part.x[0] - other_part->x[0];
+                r_ij_2 = part.x[1] - other_part->x[1];
+				dist = std::sqrt(r_ij_1 * r_ij_1 + r_ij_2 * r_ij_2);
 				if (dist < 2 * this->h) {
-					neighbours.push_back(other_part);
+                    v_ij_1 = part.v[0] - other_part->v[0];
+                    v_ij_2 = part.v[1] - other_part->v[1];
+                    this->max_vij2 = max(this->max_vij2, v_ij_1*v_ij_1 + v_ij_2*v_ij_2);
+
+					neighbours.push_back(make_pair(other_part, pre_calc_values {dist, this->dW(dist), r_ij_1/dist, r_ij_2/dist, v_ij_1, v_ij_2}));
 				}
 			}
 		}
@@ -353,8 +337,7 @@ offset SPH_main::RHS(const SPH_particle& part, const vector<vector<list<SPH_part
                             neighbours.push_back(opart);
                         }
                     }
-    }
-	SPH_particle *other_part;*/
+    }*/
 
 	const auto neighbours = this->neighbours(part, search_grid);
 
@@ -372,23 +355,40 @@ offset SPH_main::RHS(const SPH_particle& part, const vector<vector<list<SPH_part
     return result;
 }
 
-std::vector<offset> SPH_main::offsets(std::list<SPH_particle>& particle_list) {
-	std::vector<offset> offsets;
-	offsets.reserve(particle_list.size());
+list<offset> SPH_main::offsets(list<SPH_particle>& particle_list, const bool smoothing) {
+	list<offset> offsets;
 
 	const auto search_grid = this->search_grid(particle_list);
 
-	for (const auto& p : particle_list) {
-		offsets.push_back(RHS(p, search_grid));
-	}
+    if(smoothing)
+    {
+        list<SPH_particle> smoothed_state;
+        
+        for (const auto& p : this->particle_list) {
+            smoothed_state.push_back(this->smooth(p, this->neighbours(p, search_grid)));
+        }
+        assert(smoothed_state.size() == this->particle_list.size());
 
+        for (const auto& p : smoothed_state) {
+		    offsets.push_back(RHS(p, search_grid));
+	    }
+
+        this->particle_list = move(smoothed_state);
+    }
+    else {
+        for (const auto& p : particle_list) {
+		    offsets.push_back(RHS(p, search_grid));
+	    }
+    }
+
+    assert(offsets.size() == particle_list.size());
 	return offsets;
 }
 
 
 void SPH_main::timestep() 
 {
-	const auto offsets = this->offsets(this->particle_list);
+	const auto offsets = this->offsets(this->particle_list, this->count > 0 && this->count % this->smoothing_interval == 0);
 
 	// forward euler
 	auto particle_list_it = this->particle_list.begin();
@@ -426,36 +426,8 @@ void SPH_main::timestep()
 	// }
 
     this->t += this->dt;
-    if(count%this->smoothing_interval == 0)
-    {
-            /* smoothing */
-
-        std::list<SPH_particle> smoothed_state;
-
-        const auto grid = this->search_grid(this->particle_list);	
-        
-        for (const auto& p : this->particle_list) {
-            smoothed_state.push_back(this->smooth(p, this->neighbours(p, grid)));
-        }
-
-        assert(smoothed_state.size() == this->particle_list.size());
-
-        this->particle_list = move(smoothed_state);
-
-    }
-    this->count ++;
+    this->count++;
 }
-
-bool SPH_particle::operator==(const SPH_particle& other) const
-{
-	if(this->x[0] != other.x[0]) return false;
-	if(this->x[1] != other.x[1]) return false;
-	if(this->v[0] != other.v[0]) return false;
-	if(this->v[1] != other.v[1]) return false;
-	if(this->rho != other.rho) return false;
-	else return true;
-}
-
 
 double SPH_main::W(const double r)
 {
@@ -464,90 +436,75 @@ double SPH_main::W(const double r)
 	intergrates to 1 when integrated over its area
 	r: distance between particles
 	*/
-	double q = r / h;
-	double w;
-	if (q < 1) { w = 1 - 1.5 * pow(q, 2) + 0.75 * pow(q, 3); }
-	else if (1 <= q || q < 2) { w = 0.25 * pow((2 - q), 3); }
-	else { w = 0; }
-	return 10 * w / (7 * M_PI * pow(h, 2));
+    assert(r >= 0);
+
+	double q = r / this->h;
+	double w = 0;
+	if (q < 1) {
+        w = 1 - 1.5 * q*q + 0.75 * q*q*q;
+    }
+	else if (q < 2) {
+        q = 2-q;
+        w = 0.25 * q*q*q;
+    }
+
+	return 10 * w / (7 * M_PI * this->h*this->h);
 }
 
+//differential of the cubic spline
 double SPH_main::dW(const double r)
-{//differential of the cubic spline
-	double q = r / h;
-	double dw;
-	if (q <= 1) { dw = -3 * q + (9 / 4) * pow(q, 2); }
-	else { dw = -0.75 * pow((2 - q), 2); }
-	return 10 * dw / (7 * M_PI * pow(h, 2));
+{
+	double q = r / this->h;
+	double dw = 0;
+	if (q < 1) {
+        dw = -3 * q + 2.25 * q*q;
+    }
+	else if (q < 2) {
+        dw = -0.75 * (2 - q)*(2 - q);
+    }
+	return 10 * dw / (7 * M_PI * this->h * this->h);
 }
 
-std::pair<double, double> SPH_main::dvdt(const SPH_particle& p, const std::list<SPH_particle*>& neighbours)
+std::pair<double, double> SPH_main::dvdt(const SPH_particle& p, const list<pair<SPH_particle*, pre_calc_values>>& neighbours)
 {
-	std::pair<double, double> a(0.0, 0.0);
-	for (const auto& i : neighbours)
+	std::pair<double, double> a(0.0, -this->g);
+    double c1, c2;
+	for (const auto& [i, vals] : neighbours)
 	{
 		if (i == &p) continue;
-		else
-		{
-			double r_ij_1 = p.x[0] - i->x[0];
-			double r_ij_2 = p.x[1] - i->x[1];
-			double dist = std::sqrt(std::pow(r_ij_1, 2) + std::pow(r_ij_2, 2));
-			double v_ij_1 = p.v[0] - i->v[0];
-			double v_ij_2 = p.v[1] - i->v[1];
-			double e_ij_1 = r_ij_1 / dist;
-			double e_ij_2 = r_ij_2 / dist;
 
-			double dwdr = dW(dist);
+        c1 = -i->m * (p.P / (p.rho * p.rho) + i->P / (i->rho * i->rho)) * vals.dWdr;
+        c2 = this->mu * i->m * (1 / (p.rho * p.rho) + 1 / (i->rho * i->rho)) * vals.dWdr;
 
-			// x direction
-			double a1 = -i->m * ((p.P / pow(p.rho, 2)) + (i->P / pow(i->rho, 2))) * dwdr * e_ij_1 + p.main_data->mu * (i->m * (1 / pow(p.rho, 2) + 1 / pow(i->rho, 2)) * dwdr * (v_ij_1 / dist));
+        a.first += c1 * vals.e_ij_1 +  c2 * vals.v_ij_1 / vals.dist;
+        a.second += c1 * vals.e_ij_2 +  c2 * vals.v_ij_2 / vals.dist;
 
-			// y direction
-			double a2 = -i->m * ((p.P / pow(p.rho, 2)) + (i->P / pow(i->rho, 2))) * dwdr * e_ij_2 + p.main_data->mu * (i->m * (1 / pow(p.rho, 2) + 1 / pow(i->rho, 2)) * dwdr * (v_ij_2 / dist));
-
-
-			a.first += a1;
-			a.second += a2 - this->g;
-
-		}
 	}
 	return a;
 }
-double SPH_main::drhodt(const SPH_particle& p, const std::list<SPH_particle*>& neighbours)
+double SPH_main::drhodt(const SPH_particle& p, const list<pair<SPH_particle*, pre_calc_values>>& neighbours)
 {
 	double D = 0;
-	for (const auto& i : neighbours)
+	for (const auto& [i, vals] : neighbours)
 	{
 		if (i == &p) continue;
-
-        double r_ij_1 = p.x[0] - i->x[0];
-		double r_ij_2 = p.x[1] - i->x[1];
-		double dist = std::sqrt(std::pow(r_ij_1, 2) + std::pow(r_ij_2, 2));
-		double v_ij_1 = p.v[0] - i->v[0];
-		double v_ij_2 = p.v[1] - i->v[1];
-		double e_ij_1 = r_ij_1 / dist;
-		double e_ij_2 = r_ij_2 / dist;
-
-		double dwdr = dW(dist);
-
-		D = D + i->m * dwdr * (v_ij_1 * e_ij_1 + v_ij_2 * e_ij_2);
+		D += i->m * vals.dWdr * (vals.v_ij_1 * vals.e_ij_1 + vals.v_ij_2 * vals.e_ij_2);
 	}
 	return D;
 }
 
-SPH_particle SPH_main::smooth(const SPH_particle& part, const list<SPH_particle*>& neighbours)
+SPH_particle SPH_main::smooth(const SPH_particle& part, const list<pair<SPH_particle*, pre_calc_values>>& neighbours)
 {
     auto smoothed = part;
-    double w = W(0.);       // calculate kernal for part itself
-    double sum_w = w;
-    double sum_wdrho = w / part.rho;
+    double w;
+    double sum_w = 0;
+    double sum_wdrho = 0;
 
-    for (auto opart : neighbours)
+    for (const auto& [part, vals] : neighbours)
     {
-        double r_ij = sqrt(pow(opart->x[0] - part.x[0], 2) + pow(opart->x[1] - part.x[1], 2));
-        w = W(r_ij);
+        w = W(vals.dist);
         sum_w += w;
-        sum_wdrho += w / opart->rho;
+        sum_wdrho += w / part->rho;
     }
     smoothed.rho = sum_w / sum_wdrho;
 

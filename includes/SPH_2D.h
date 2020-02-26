@@ -11,6 +11,10 @@ using namespace std;
 
 class SPH_main;
 
+struct pre_calc_values {
+	double dist, dWdr, e_ij_1, e_ij_2, v_ij_1, v_ij_2; 
+};
+
 struct offset {
 	double dx0, dx1, dv0, dv1, drho;
 
@@ -41,8 +45,6 @@ public:
 	void calc_index();
 	void redef_P(); //function to update the Pressure
 
-	bool operator==(const SPH_particle& other) const;
-
 	void operator+=(const offset& delta);
 };
 
@@ -61,21 +63,21 @@ public:
 	void place_points(double *min, double *max, string shape = "rectangle");
     
 	vector<vector<list<SPH_particle*>>> search_grid(list<SPH_particle>& particle_list);			//allocates all the points to the search grid (assumes that index has been appropriately updated)
-	std::list<SPH_particle*> neighbours(const SPH_particle& part, const vector<vector<list<SPH_particle*>>> search_grid);
+	list<pair<SPH_particle*, pre_calc_values>> neighbours(const SPH_particle& part, const vector<vector<list<SPH_particle*>>> search_grid);
 
 	offset RHS(const SPH_particle& part, const vector<vector<list<SPH_particle*>>>& search_grid);
-	std::vector<offset> offsets(std::list<SPH_particle>& particle_list);
+	list<offset> offsets(list<SPH_particle>& particle_list, const bool smoothing=false);
 	void timestep();
 
-	std::pair<double, double> dvdt(const SPH_particle& p, const std::list<SPH_particle*>& neighbours);
+	pair<double, double> dvdt(const SPH_particle& p, const list<pair<SPH_particle*, pre_calc_values>>& neighbours);
 
-	double drhodt(const SPH_particle& p, const std::list<SPH_particle*>& neighbours);
+	double drhodt(const SPH_particle& p, const list<pair<SPH_particle*, pre_calc_values>>& neighbours);
 
 	double W(const double r);
 
 	double dW(const double r);
 
-	SPH_particle smooth(const SPH_particle& part, const list<SPH_particle*>& neighbours);
+	SPH_particle smooth(const SPH_particle& part, const list<pair<SPH_particle*, pre_calc_values>>& neighbours);
 
 
 	double h;								//smoothing length
@@ -90,6 +92,8 @@ public:
 	double c0 = 20;
 	double min_x[2], max_x[2];
 	bool stencil = false;
+
+	double max_vij2, max_ai2, max_rho;
 
 	double t = 0;	
 	double dt;

@@ -434,23 +434,6 @@ void SPH_main::timestep()
 	// }
 
     this->t += this->dt;
-    if(count%this->smoothing_interval == 0)
-    {
-            /* smoothing */
-
-        std::list<SPH_particle> smoothed_state;
-
-        const auto grid = this->search_grid(this->particle_list);	
-        
-        for (const auto& p : this->particle_list) {
-            smoothed_state.push_back(this->smooth(p, this->neighbours(p, grid)));
-        }
-
-        assert(smoothed_state.size() == this->particle_list.size());
-
-        this->particle_list = move(smoothed_state);
-
-    }
     this->count++;
 }
 

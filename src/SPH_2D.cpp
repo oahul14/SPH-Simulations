@@ -35,7 +35,8 @@ SPH_particle::SPH_particle(double rho, bool bound)
     this->rho = rho;
     this->v[0] = this->v[1] = 0;
     this->set_m();
-    this->redef_P();
+    if (rho == 0) this->P = 0;
+    else this->redef_P();
     this->boundary_particle = bound;
 }
 
@@ -142,6 +143,8 @@ void SPH_main::initialise_grid(void)
 
 		max_list[i] = int((max_x[i] - min_x[i]) / (2.0*h) + 1.0);
 	}
+    cout << min_x[0] << " " << min_x[1] << endl;
+    cout << max_x[0] << " " << max_x[1] << endl;
 }
 
 
@@ -159,7 +162,7 @@ void SPH_main::place_points(double *min, double *max, string shape)
             x[0] = min[0];
             while (x[0] <= max[0])
             {
-                if ((x[0] < min[0] + 2.*h) || (x[0] > max[0] - 2.*h) || (x[1] < min[1] + 2.*h) || (x[1] > max[1] - 2.*h)) 
+                if ((x[0] < min[0]+2*h) || (x[0] > max[0]-2*h) || (x[1] < min[1]+2*h) || (x[1] > max[1]-2*h)) 
                 {
                     for (int i = 0; i < 2; i++)
                         bound_particle.x[i] = x[i];
@@ -204,7 +207,7 @@ void SPH_main::place_points(double *min, double *max, string shape)
                 if ((x[0] < min[0] + 2.*h) || (x[0] > max[0] - 2.*h) || (x[1] < min[1] + 2.*h) || (x[1] > max[1] - 2.*h)) 
                 {
                     for (int i = 0; i < 2; i++)
-                        bound_particle.x[i] = x[i];
+                    bound_particle.x[i] = x[i];
                     bound_particle.calc_index();
                     particle_list.push_back(bound_particle);
                     x[0] += dx;
@@ -423,9 +426,42 @@ std::pair<double, double> SPH_main::dvdt(const SPH_particle& p_i, const SPH_part
 {
 	double c1 = -p_j.m * (p_i.P / (p_i.rho * p_i.rho) + p_j.P / (p_j.rho * p_j.rho)) * vals.dWdr;
     double c2 = this->mu * p_j.m * (1 / (p_i.rho * p_i.rho) + 1 / (p_j.rho * p_j.rho)) * vals.dWdr;
+    
+    double a1 = c1 * vals.e_ij_1 +  c2 * vals.v_ij_1 / vals.dist;
+    double a2 = c1 * vals.e_ij_2 +  c2 * vals.v_ij_2 / vals.dist;
 
-    return make_pair(c1 * vals.e_ij_1 +  c2 * vals.v_ij_1 / vals.dist,
-                     c1 * vals.e_ij_2 +  c2 * vals.v_ij_2 / vals.dist);
+    if (p_j.boundary_particle && !p_i.boundary_particle && vals.dist > 0.48 * this->dx) {
+        double D = 2 * this->g;
+        double F = D*(pow(0.48*this->dx/vals.dist, 4) - pow(0.48*this->dx/vals.dist, 2)) / vals.dist;
+        double F1 = acos(vals.e_ij_1) * F;
+        double F2 = acos(vals.e_ij_2) * F;
+        // left
+        if (p_j.x[0] <= 0 && 0 <= p_j.x[1] && p_j.x[1] <= 10 && p_i.x[0] >= p_j.x[0]) {
+            a1 += F1;
+            a2 += F2;
+            // cout << "left: " << p_j.x[0] << " " << p_j.x[1] << "; ";
+        }
+        // right
+        if (p_j.x[0] >= 20 && 0 <= p_j.x[1] && p_j.x[1] <= 10 && p_i.x[0] <= p_j.x[0]) {
+            a1 += F1;
+            a2 += F2;
+            // cout << "right: " << p_j.x[0] << " " << p_j.x[1] << "; ";
+        }
+        // top
+        if (0 <= p_j.x[0] && p_j.x[0] <= 20 && p_j.x[1] >= 10 && p_i.x[1] <= p_j.x[1]) {
+            a1 += F1;
+            a2 += F2; 
+            // cout << "top: " << p_j.x[0] << " " << p_j.x[1] << "; ";
+        }
+        //bottom
+        if (0 <= p_j.x[0] && p_j.x[0] <= 20 && p_j.x[1] <= 0 && p_i.x[1] >= p_j.x[1]) {
+            a1 += F1;
+            a2 += F2; 
+            // cout << "bot: " << p_j.x[0] << " " << p_j.x[1] << "; ";
+        }
+    }
+
+    return make_pair(a1, a2);
 }
 
 double SPH_main::drhodt(const SPH_particle& p_i, const SPH_particle& p_j, const pre_calc_values& vals)
@@ -450,3 +486,4 @@ SPH_particle SPH_main::smooth(const SPH_particle& part, const list<pair<SPH_part
 
     return smoothed;
 }
+

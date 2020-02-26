@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
 
 	domain.place_points(domain.min_x, domain.max_x);				//places initial points - will need to be modified to include boundary points and the specifics of where the fluid is in the domain
 	auto first_particle = domain.particle_list.front();
-	write_file("particles_" + std::to_string(domain.t) + ".vtp", domain.particle_list);
+	write_file("particles_0.vtp", domain.particle_list);
 
 	int iterations = 3;
 	if (argc > 1) iterations = std::stoi(argv[1]);

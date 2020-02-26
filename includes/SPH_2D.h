@@ -9,6 +9,7 @@
 
 using namespace std;
 
+
 class SPH_main;
 
 struct pre_calc_values {
@@ -37,8 +38,7 @@ public:
 	SPH_particle(double rho, bool bound);
 	double x[2], v[2];		// position and velocity
 	double rho, P;					// density and pressure
-	bool boundary_particle = false;
-	//double rho0 = 1000;// kg/ m^3
+	bool boundary_particle;
 
 	static SPH_main *main_data;		// link to SPH_main class so that it can be used in calc_index
 	static double B;
@@ -54,6 +54,13 @@ public:
 	void operator+=(const offset& delta);
 };
 
+struct Bound_info 
+{
+	double b_left = 0; 
+	double b_right = 20;
+	double b_bot = 0;
+	double b_top = 10;
+};
 
 
 
@@ -112,9 +119,9 @@ public:
 	int output_intervval = 10;
 
 	int max_list[2];
-
+	Bound_info boundary;
 	list<SPH_particle> particle_list;						//list of all the particles
-
+	//struct bound_info boundary {0, 120, 0, 10};
     //Outer 2 are the grid, inner vector is the list of pointers in each cell
     // serach grid excludes boundary cells
 };

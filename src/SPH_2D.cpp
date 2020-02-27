@@ -255,6 +255,7 @@ vector<offset> SPH_main::calculate_offsets(list<SPH_particle>& particles) {
     for (auto& part : particles) {
         search_grid[part.list_num[0]][part.list_num[1]].pop_front();
 
+        #pragma omp parallel for private(dist, r_ij_1, r_ij_2, v_ij_1, v_ij_2) shared(offsets, search_grid, part)
         for (int i = max(part.list_num[0] - 1, 0); i < min(part.list_num[0] + 2, this->max_list[0]); i++) {
             for (int j = max(part.list_num[1] - 1, 0); j < min(part.list_num[1] + 2, this->max_list[1]); j++) {
                 for (const auto [other_part, other_pos] : search_grid[i][j]) {
@@ -267,14 +268,17 @@ vector<offset> SPH_main::calculate_offsets(list<SPH_particle>& particles) {
                         this->max_vij2 = max(this->max_vij2, v_ij_1*v_ij_1 + v_ij_2*v_ij_2);
 
                         pre_calc_values pre_calculated {dist, this->dW(dist), r_ij_1/dist, r_ij_2/dist, v_ij_1, v_ij_2};
-
                         const auto [offset_part, offset_other_part] = this->calc_offset(part, *other_part, pre_calculated);
+
+                        #pragma omp atomic update
                         offsets[other_pos] += offset_other_part;
+
+                        #pragma omp atomic update
                         offsets[this_pos] += offset_part;
                     }
                 }
             }
-	    }
+        }
         offsets[this_pos].dx0 = part.v[0];
         offsets[this_pos].dx1 = part.v[1];
         offsets[this_pos].dv1 -= this->g;

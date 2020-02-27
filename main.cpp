@@ -4,6 +4,7 @@
 #include <iostream>
 #include <cassert>
 #include <chrono>
+#include <omp.h>
 
 void test_timeloop(SPH_main& domain, double tmax = 1, double tprec = 0.02, SPH_main::timesteppers ts = SPH_main::AB2) {
 	int counter = 0;
@@ -42,9 +43,10 @@ int main(int argc, char* argv[]) {
 		ts = (arg == "forward_euler") ? SPH_main::forward_euler : (arg == "improved_euler") ? SPH_main::improved_euler : (arg == "AB2") ? SPH_main::AB2 :
 			throw std::invalid_argument("invalid time stepping scheme " + arg);
 	}
-
+	double start_serial = omp_get_wtime();
     test_timeloop(domain, tmax, tprec, ts);
-
+	double end_serial = omp_get_wtime(); //end time measurement
+	std::cout << "\nAverage time for serial: " << end_serial-start_serial<< " seconds";
 	// test_timeloop(domain);
 
     return 0;

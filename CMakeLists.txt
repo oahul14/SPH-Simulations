@@ -4,6 +4,8 @@ include(CTest)
 
 set(CMAKE_CXX_STANDARD 17)
 
+find_package(OpenMP REQUIRED)
+
 #find_package(MPI REQUIRED)
 
 #include_directories(${MPI_INCLUDE_PATH})
@@ -18,12 +20,13 @@ endif()
 #message("Adding -fPIC compile option")
 #add_compile_options ( -fPIC )
 
+
 include_directories(includes)
 add_subdirectory(src)
 add_subdirectory(tests)
 
 add_executable(SPH_main main.cpp)
-target_link_libraries(SPH_main SPH file_writer)
+target_link_libraries(SPH_main SPH file_writer OpenMP::OpenMP_CXX)
 
 #target_link_libraries(life_mpi life comms ${MPI_LIBRARIES})
 

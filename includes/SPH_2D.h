@@ -64,7 +64,7 @@ public:
 	SPH_main();
 	void initialise_grid();
 
-	void place_points(double *min, double *max, string shape = "shoaling");
+	void place_points(double *min, double *max, string shape = "rectangle");
     
 	//allocates all the points to the search grid (assumes that index has been appropriately updated)
 	vector<vector<list<pair<SPH_particle*, list<SPH_particle*>::size_type>>>> search_grid(list<SPH_particle>& particle_list);
@@ -86,7 +86,7 @@ public:
 
 	double h_fac = 1.3;
 	double h;
-	double dx = 0.1;								//particle initial spacing
+	double dx = 0.8;								//particle initial spacing
 	double rho0 = 1000;// kg/ m^3
 	double mu = 0.001; 
 	double g = 9.81;

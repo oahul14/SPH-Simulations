@@ -5,37 +5,30 @@
 #include <cassert>
 #include <chrono>
 
-void test_timestep(SPH_main& domain, int iterations = 3) {
-	const double t_max = iterations*domain.dt;
+void test_timestep(SPH_main& domain, const SPH_main::timesteppers ts, const int iterations) {
+	const auto t_max = iterations*domain.dt;
 	std::cout << "dt = " << domain.dt << std::endl;
 	write_file("particles_" + std::to_string(domain.t) + ".vtp", domain.particle_list);
 
 	while(domain.t < t_max) {
-		domain.timestep();
+		domain.timestep(ts);
 		write_file("particles_" + std::to_string(domain.t) + ".vtp", domain.particle_list);
 	}
 	write_file("particles_" + std::to_string(domain.t) + ".vtp", domain.particle_list);
 }
 
 void test_P(SPH_main& domain) {
-		//for a single particle
+	//for a single particle
 	auto particle = domain.particle_list.front();
-	//cout<<"domain rho0 "<<domain.rho0<<"\n";
+
 	particle.rho = 0;
-	//cout<<" rho shoudl be 0: "<<particle.rho<<"\n";
-	//cout<<"Particle Pressure " <<particle.P <<"\n";
 	particle.redef_P();
-	//cout<<"Particle Pressure after redef " <<particle.P <<"\n";
-	//cout <<"Abs:" <<abs(1 - particle.P / (-57142.9))<<"\n";
 	assert (abs(1 - particle.P / (-57142.9)) < 1e-6);
-	//cout <<"next:" <<abs(particle.P - (-57142.9))<<"\n";
 	assert (abs(particle.P - (-57142.9)) < 0.1);
-	 particle.rho = 1000;
-	 particle.redef_P();
-	 //cout<<"Particle Pressure before 0 " <<particle.P <<"\n";
-	 assert (particle.P == 0);
 
-
+	particle.rho = 1000;
+	particle.redef_P();
+	assert (particle.P == 0);
 }
 
 void test_dvdt(SPH_main& domain) {
@@ -122,13 +115,18 @@ int main(int argc, char* argv[])
 	test_dW(domain);
 	//test_dvdt(domain);
 
+	auto ts = SPH_main::improved_euler;
+	int iterations = 3;
 	if (argc > 1) {
-		test_timestep(domain, std::stoi(argv[1]));
+		iterations = std::stoi(argv[1]);
 	}
-	else {
-		test_timestep(domain);
+	if (argc > 2) {
+		auto arg = string(argv[2]);
+		ts = (arg == "forward_euler") ? SPH_main::forward_euler : (arg == "improved_euler") ? SPH_main::improved_euler :
+			throw std::invalid_argument("invalid time stepping scheme " + arg);
 	}
-	
+
+	test_timestep(domain, ts, iterations);
 	
 	return 0;
 }

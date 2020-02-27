@@ -5,6 +5,7 @@
 build/
 release/
 debug/
+data/
 
 # file system stuff
 .DS_Store

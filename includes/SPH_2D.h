@@ -54,16 +54,6 @@ public:
 	void operator+=(const offset& delta);
 };
 
-struct Bound_info 
-{
-	double b_left = 0; 
-	double b_right = 20;
-	double b_bot = 0;
-	double b_top = 10;
-};
-
-
-
 class SPH_main 
 {
 public:
@@ -74,7 +64,6 @@ public:
 	SPH_main();
 
 	void set_values();
-	void set_stencil(bool sten);
 	void initialise_grid();
 
 	void place_points(double *min, double *max, string shape = "rectangle");
@@ -95,6 +84,8 @@ public:
 
 	SPH_particle smooth(const SPH_particle& part, const list<pair<SPH_particle*, pre_calc_values>>& neighbours);
 
+	void drag_back(SPH_particle& part);
+
 	double h;								//smoothing length
 	double h_fac;
 	double dx = 0.2;								//particle initial spacing
@@ -108,12 +99,12 @@ public:
 	// this parameter is in [0.1,0,3]
 	double Ccfl = 0.2;
 	double min_x[2], max_x[2];
-	bool stencil = false;
 
 	double max_vij2, max_ai2, max_rho;
 
 	double t = 0;	
 	double dt;
+	double prev_dt = 0;
 	int count = 0;
 	// set the smoothing intervel in fix number
 	int smoothing_interval = 10;
@@ -123,9 +114,9 @@ public:
 	int output_intervval = 10;
 
 	int max_list[2];
-	Bound_info boundary;
+
 	list<SPH_particle> particle_list;						//list of all the particles
-	//struct bound_info boundary {0, 120, 0, 10};
+	vector<offset> previous_offsets;
     //Outer 2 are the grid, inner vector is the list of pointers in each cell
     // serach grid excludes boundary cells
 };

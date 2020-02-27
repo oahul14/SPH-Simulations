@@ -22,6 +22,9 @@ include_directories(includes)
 add_subdirectory(src)
 add_subdirectory(tests)
 
+add_executable(SPH_main main.cpp)
+target_link_libraries(SPH_main SPH file_writer)
+
 #target_link_libraries(life_mpi life comms ${MPI_LIBRARIES})
 
 # if(MPI_COMPILE_FLAGS)

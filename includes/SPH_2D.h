@@ -58,7 +58,7 @@ class SPH_main
 {
 public:
 	enum timesteppers {
-		forward_euler, improved_euler
+		forward_euler, improved_euler, AB2
 	};
 
 	SPH_main();

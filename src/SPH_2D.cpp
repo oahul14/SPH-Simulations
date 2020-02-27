@@ -378,6 +378,18 @@ void SPH_main::timestep(const timesteppers& ts)
         }
         break;
         
+        case AB2: {
+            auto particle_list_it = this->particle_list.begin();
+            auto offsets_it = offsets_1.cbegin();
+            auto prev_offsets_it = this->previous_offsets.cbegin();
+            while(particle_list_it != this->particle_list.end()) {
+                *particle_list_it++ += *offsets_it++ * (3 * 0.5 * this->dt) + *prev_offsets_it++ * (-0.5 * this->dt);
+            }
+
+            this->previous_offsets = move(offsets_1);        
+        }
+        break;
+
         default:
             throw std::invalid_argument("invalid time stepping method");
     }

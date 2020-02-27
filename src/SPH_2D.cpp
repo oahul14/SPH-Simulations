@@ -56,7 +56,7 @@ void SPH_particle::redef_P()
 {
 	//implementtaion of the Tait Equition
 	//relates Pressure to density
-	this->P = this->B * ((this->rho / this->main_data->rho0) - 1);
+	this->P = this->B * (std::pow(this->rho / this->main_data->rho0, this->main_data->gamma) - 1);
 }
 
 const offset offset::operator+(const offset& other) const {

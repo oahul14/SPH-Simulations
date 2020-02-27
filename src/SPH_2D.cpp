@@ -260,7 +260,7 @@ vector<offset> SPH_main::calculate_offsets(list<SPH_particle>& particles) {
     auto search_grid = this->search_grid(particles);
 
     double dist;   // distance between particles
-    double r_ij_1, r_ij_2; // unit vector between particles
+    double r_ij_1, r_ij_2; // vector between particles
     double v_ij_1, v_ij_2;
 
     vector<offset> offsets(particles.size());
@@ -341,7 +341,6 @@ void SPH_main::timestep(const timesteppers& ts)
     }
     this->dt = this->Ccfl * min(dt_cfl, min(dt_F, dt_A));
 
-    // TODO implement switch between timestepping methods with enum
     // TODO implement linear multistep (i.e. combine previous step with this step) -> faster and equally accurate compared to improved euler
 
 	/* forward euler */
@@ -383,21 +382,11 @@ void SPH_main::timestep(const timesteppers& ts)
             throw std::invalid_argument("invalid time stepping method");
     }
 	
-
-    // TODO: update smooting for new fast neighbour iteration
-    ///* smoothing */
-    // if (this->count > 0 && this->count % this->smoothing_interval == 0)
-    // {
-    //     list<SPH_particle> smoothed_state;
-    //     const auto search_grid = this->search_grid(particle_list);
-        
-    //     for (const auto& p : this->particle_list) {
-    //         smoothed_state.push_back(this->smooth(p, this->neighbours(p, search_grid)));
-    //     }
-    //     assert(smoothed_state.size() == this->particle_list.size());
-
-    //     this->particle_list.swap(smoothed_state);
-    // }
+    /* smoothing */
+    if (this->count > 0 && this->count % this->smoothing_interval == 0)
+    {
+        this->smooth(this->particle_list);
+    }
 
     this->t += this->dt;
     this->count++;
@@ -474,23 +463,35 @@ double SPH_main::drhodt(const SPH_particle& p_i, const SPH_particle& p_j, const 
 	return p_j.m * vals.dWdr * (vals.v_ij_1 * vals.e_ij_1 + vals.v_ij_2 * vals.e_ij_2);
 }
 
-// TODO: update smooting for new fast neighbour iteration
-SPH_particle SPH_main::smooth(const SPH_particle& part, const list<pair<SPH_particle*, pre_calc_values>>& neighbours)
+void SPH_main::smooth(list<SPH_particle>& particles) 
 {
-    auto smoothed = part;
-    double w;
-    double sum_w = 0;
-    double sum_wdrho = 0;
+    vector<pair<double, double>> fractions(particles.size(), make_pair(0.0, 0.0));
 
-    for (const auto& [part, vals] : neighbours)
-    {
-        w = this->W(vals.dist);
-        sum_w += w;
-        sum_wdrho += w / part->rho;
+    auto neighbours = this->search_grid(particles);
+    vector<pair<double, double>>::size_type this_pos = 0;
+    double dist, r_ij_1, r_ij_2, W; // distance between particles
+
+    for (auto& part : particles) {
+        for (int i = max(part.list_num[0] - 1, 0); i < min(part.list_num[0] + 2, this->max_list[0]); i++) {
+            for (int j = max(part.list_num[1] - 1, 0); j < min(part.list_num[1] + 2, this->max_list[1]); j++) {
+                for (const auto [other_part, other_pos] : neighbours[i][j]) {
+                    r_ij_1 = part.x[0] - other_part->x[0];
+                    r_ij_2 = part.x[1] - other_part->x[1];
+                    dist = std::sqrt(r_ij_1 * r_ij_1 + r_ij_2 * r_ij_2);
+                    if (dist < 2 * this->h) {
+                        W = this->W(dist);
+                        fractions[this_pos].first += W;
+                        fractions[other_pos].first += W;
+                        fractions[this_pos].second += W/other_part->rho;
+                        fractions[other_pos].second += W/other_part->rho;
+                    }
+                }
+            }
+	    }
+        part.rho = fractions[this_pos].first / fractions[this_pos].second;
+        neighbours[part.list_num[0]][part.list_num[1]].pop_front();
+        this_pos++;
     }
-    smoothed.rho = sum_w / sum_wdrho;
-
-    return smoothed;
 }
 
 void SPH_main::drag_back(SPH_particle& part)

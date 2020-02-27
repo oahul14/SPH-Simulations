@@ -82,7 +82,7 @@ public:
 	double W(const double r);
 	double dW(const double r);
 
-	SPH_particle smooth(const SPH_particle& part, const list<pair<SPH_particle*, pre_calc_values>>& neighbours);
+	void smooth(list<SPH_particle>& particles);
 
 	void drag_back(SPH_particle& part);
 

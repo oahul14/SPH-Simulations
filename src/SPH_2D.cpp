@@ -55,7 +55,7 @@ void SPH_particle::redef_P()
 {
 	//implementtaion of the Tait Equition
 	//relates Pressure to density
-	this->P = this->B * ((this->rho / this->main_data->rho0) - 1);
+	this->P = this->B * ( pow( (this->rho / this->main_data->rho0), main_data->gamma) - 1);
 }
 
 const offset offset::operator+(const offset& other) const {
@@ -410,12 +410,14 @@ double SPH_main::dW(const double r)
 	double q = r / this->h;
 	double dw = 0;
 	if (q < 1) {
-        dw = -3 * q + 2.25 * q*q;
+        dw = 3*r*(3*r-4*this->h)/(4*this->h*this->h*this->h);
+        //dw = -3 * q + 2.25 * q*q;
     }
 	else if (q < 2) {
-        dw = -0.75 * (2 - q)*(2 - q);
+        dw = -3*(r-2*this->h)*(r-2*this->h)/(4*this->h*this->h*this->h);
     }
-	return 10 * dw / (7 * M_PI * this->h * this->h);
+    //how do we make sure q<2
+	return dw ; //10 * dw / (7 * M_PI * this->h * this->h);
 }
 
 std::pair<double, double> SPH_main::dvdt(const SPH_particle& p_i, const SPH_particle& p_j, const pre_calc_values& vals)

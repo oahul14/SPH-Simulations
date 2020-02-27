@@ -16,6 +16,7 @@ in some libraries the M_PI is not include so we included the #ifndef
 #include <list>
 #include <iostream>
 #include <cassert>
+#include <stdexcept>
 
 using namespace std;
 
@@ -319,7 +320,7 @@ pair<offset, offset> SPH_main::calc_offset(const SPH_particle& p_i, const SPH_pa
 }
 
 
-void SPH_main::timestep() 
+void SPH_main::timestep(const timesteppers& ts)
 {   
 	this->max_rho = std::max_element(this->particle_list.cbegin(), this->particle_list.cend(),
                                      [](const SPH_particle& p1, const SPH_particle& p2){ return p1.rho < p2.rho; })->rho;
@@ -337,11 +338,40 @@ void SPH_main::timestep()
     // TODO implement linear multistep (i.e. combine previous step with this step) -> faster and equally accurate compared to improved euler
 
 	/* forward euler */
-	auto particle_list_it = this->particle_list.begin();
-	auto offsets_it = offsets_1.cbegin();
-	while(particle_list_it != this->particle_list.end()) {
-		*particle_list_it++ +=  *offsets_it++ * this->dt;
-	}
+    switch(ts) {
+        case forward_euler: {
+            auto particle_list_it = this->particle_list.begin();
+            auto offsets_it = offsets_1.cbegin();
+            while(particle_list_it != this->particle_list.end()) {
+                *particle_list_it++ +=  *offsets_it++ * this->dt;
+            }
+        }
+        break;
+
+        case improved_euler: {
+            auto next_state_star = this->particle_list;
+            auto next_state_star_it = next_state_star.begin();
+            auto offsets_1_it = offsets_1.cbegin();
+            while(next_state_star_it != next_state_star.end()) {
+                *next_state_star_it++ += *offsets_1_it++ * this->dt;
+            }
+
+            const auto offsets_2 = this->calculate_offsets(next_state_star);
+
+            auto particle_list_it = this->particle_list.begin();
+            offsets_1_it = offsets_1.cbegin();
+            auto offsets_2_it = offsets_2.cbegin();
+
+            while(particle_list_it != this->particle_list.end()) {
+                *particle_list_it++ += (*offsets_1_it++ + *offsets_2_it++) * (0.5*this->dt);
+            }
+        }
+        break;
+        
+        default:
+            throw std::invalid_argument("invalid time stepping method");
+    }
+	
 
     // TODO: update smooting for new fast neighbour iteration
     ///* smoothing */
@@ -357,25 +387,6 @@ void SPH_main::timestep()
 
     //     this->particle_list.swap(smoothed_state);
     // }
-
-	// /* improved euler */
-	// auto next_state_star = this->particle_list;
-
-	// auto next_state_star_it = next_state_star.begin();
-	// auto offsets_1_it = offsets_1.cbegin();
-	// while(next_state_star_it != next_state_star.end()) {
-	// 	*next_state_star_it++ += *offsets_1_it++ * this->dt;
-    // }
-
-	// const auto offsets_2 = this->calculate_offsets(next_state_star);
-
-	// auto particle_list_it = this->particle_list.begin();
-	// offsets_1_it = offsets_1.cbegin();
-	// auto offsets_2_it = offsets_2.cbegin();
-
-	// while(particle_list_it != this->particle_list.end()) {
-	// 	*particle_list_it++ += (*offsets_1_it++ + *offsets_2_it++) * (0.5*this->dt);
-	// }
 
     this->t += this->dt;
     this->count++;

@@ -67,6 +67,10 @@ struct Bound_info
 class SPH_main 
 {
 public:
+	enum timesteppers {
+		forward_euler, improved_euler
+	};
+
 	SPH_main();
 
 	void set_values();
@@ -82,7 +86,7 @@ public:
 
 	pair<offset, offset> calc_offset(const SPH_particle& p_i, const SPH_particle& p_j, const pre_calc_values& vals);
 	list<offset> offsets(list<SPH_particle>& particle_list);
-	void timestep();
+	void timestep(const timesteppers& ts = forward_euler);
 
 	pair<double, double> dvdt(const SPH_particle& p_i, const SPH_particle& p_j, const pre_calc_values& vals);
 	double drhodt(const SPH_particle& p_i, const SPH_particle& p_j, const pre_calc_values& vals);

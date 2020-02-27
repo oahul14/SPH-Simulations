@@ -285,7 +285,7 @@ vector<offset> SPH_main::calculate_offsets(list<SPH_particle>& particles) {
 
                         pre_calc_values pre_calculated {dist, this->dW(dist), r_ij_1/dist, r_ij_2/dist, v_ij_1, v_ij_2};
 
-                        const auto [offset_part, offset_other_part] = this->calculate_offset(part, *other_part, pre_calculated);
+                        const auto [offset_part, offset_other_part] = this->calc_offset(part, *other_part, pre_calculated);
                         offsets[other_pos] += offset_other_part;
                         offsets[this_pos] += offset_part;
                     }
@@ -304,7 +304,7 @@ vector<offset> SPH_main::calculate_offsets(list<SPH_particle>& particles) {
     return offsets;
 }
 
-pair<offset, offset> SPH_main::calculate_offset(const SPH_particle& p_i, const SPH_particle& p_j, const pre_calc_values& vals) {
+pair<offset, offset> SPH_main::calc_offset(const SPH_particle& p_i, const SPH_particle& p_j, const pre_calc_values& vals) {
     offset offset_part, offset_neighbour;
 
     const auto [dv0, dv1] = this->dvdt(p_i, p_j, vals);
@@ -418,48 +418,30 @@ double SPH_main::dW(const double r)
 	return 10 * dw / (7 * M_PI * this->h * this->h);
 }
 
-std::pair<double, double> SPH_main::dvdt(SPH_particle& p_i, SPH_particle& p_j, pre_calc_values& vals)
+std::pair<double, double> SPH_main::dvdt(const SPH_particle& p_i, const SPH_particle& p_j, const pre_calc_values& vals)
 {
-	double c1 = -p_j.m * (p_i.P / (p_i.rho * p_i.rho) + p_j.P / (p_j.rho * p_j.rho)) * vals.dWdr;
-    double c2 = this->mu * p_j.m * (1 / (p_i.rho * p_i.rho) + 1 / (p_j.rho * p_j.rho)) * vals.dWdr;
+	const auto c1 = -p_j.m * (p_i.P / (p_i.rho * p_i.rho) + p_j.P / (p_j.rho * p_j.rho)) * vals.dWdr;
+    const auto c2 = this->mu * p_j.m * (1 / (p_i.rho * p_i.rho) + 1 / (p_j.rho * p_j.rho)) * vals.dWdr;
     
-    double a1 = c1 * vals.e_ij_1 +  c2 * vals.v_ij_1 / vals.dist;
-    double a2 = c1 * vals.e_ij_2 +  c2 * vals.v_ij_2 / vals.dist;
+    auto a1 = c1 * vals.e_ij_1 +  c2 * vals.v_ij_1 / vals.dist;
+    auto a2 = c1 * vals.e_ij_2 +  c2 * vals.v_ij_2 / vals.dist;
 
-    bool do_swap = !p_j.boundary_particle && p_i.boundary_particle && vals.dist < 0.7 * this->dx;
-    if (do_swap) {
-        swap(p_i, p_j);
-        vals.e_ij_1 = -vals.e_ij_1;
-        vals.e_ij_1 = -vals.e_ij_1;
-    }
-
-    if (p_j.boundary_particle && !p_i.boundary_particle && vals.dist < 0.7 * this->dx) {
-        double D = 10 * this->g;
-        double F = D*(pow(0.7*this->dx/vals.dist, 12) - pow(0.7*this->dx/vals.dist, 4)) / vals.dist;
-        double F1 = vals.e_ij_1 * F;
-        double F2 = vals.e_ij_2 * F;
-        // left
-        if (p_j.x[0] <= 0 && p_i.x[0] >= p_j.x[0]) {
-            a1 += F1;
+    /* If exactly one of p_i, p_j is a boundary particle, apply repelling force */
+    if (p_j.boundary_particle != p_i.boundary_particle && vals.dist < 0.7 * this->dx) {
+        auto part = &p_i;
+        auto bound = &p_j;
+        if (p_i.boundary_particle) {
+            swap(part, bound);
         }
-        // right
-        if (p_j.x[0] >= 20 && p_i.x[0] <= p_j.x[0]) {
-            a1 += F1;
+        auto F = 10 * this->g * (pow(0.7*this->dx/vals.dist, 12) - pow(0.7*this->dx/vals.dist, 4)) / vals.dist;
+        // left or right 
+        if ((bound->x[0] <= 0 && part->x[0] >= bound->x[0]) || (bound->x[0] >= 20 && part->x[0] <= bound->x[0])) {
+            a1 += p_i.boundary_particle ? -vals.e_ij_1 * F : vals.e_ij_1 * F;
         }
-        // top
-        if (p_j.x[1] >= 10 && p_i.x[1] <= p_j.x[1]) {
-            a2 += F2; 
+        // top or bottom
+        if ((bound->x[1] >= 10 && part->x[1] <= bound->x[1]) || (bound->x[1] <= 0 && part->x[1] >= bound->x[1])) {
+            a2 += p_i.boundary_particle ? -vals.e_ij_2 * F : vals.e_ij_2 * F;
         }
-        //bottom
-        if (p_j.x[1] <= 0 && p_i.x[1] >= p_j.x[1]) {
-            a2 += F2;
-        }
-    }
-
-    if (do_swap) {
-        swap(p_i, p_j);
-        vals.e_ij_1 = -vals.e_ij_1;
-        vals.e_ij_1 = -vals.e_ij_1;
     }
 
     return make_pair(a1, a2);

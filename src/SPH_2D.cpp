@@ -115,21 +115,7 @@ SPH_main::SPH_main()
 {
 	SPH_particle::main_data = this;
     SPH_particle::B = (this->rho0 * pow(this->c0, 2)) / this->gamma;
-}
-
-void SPH_main::set_values(void)
-{
-	this->min_x[0] = 0.0;
-	this->min_x[1] = 0.0;
-
-	this->max_x[0] = 20.0;
-	this->max_x[1] = 10.0;
-
-	this->dx = 0.2;
-	
-	this->h_fac = 1.3;
-	this->h = this->dx * this->h_fac;
-    this->dt = 0.1*this->h/this->c0;
+    this->h = this->h_fac * this->dx;
 }
 
 void SPH_main::initialise_grid(void)
@@ -164,21 +150,21 @@ void SPH_main::place_points(double *min, double *max, string shape)
                     for (int i = 0; i < 2; i++)
                         bound_particle.x[i] = x[i];
                     particle_list.push_back(bound_particle);
-                    x[0] += dx;
+                    x[0] += this->dx;
                 }
                 else if ((x[0] <= 3 && x[1] <= 5) || (3 <= x[0] && x[1] <= 2)) 
                 {
                     for (int i = 0; i < 2; i++)
                         water_particle.x[i] = x[i];
                     particle_list.push_back(water_particle);
-                    x[0] += dx;
+                    x[0] += this->dx;
                 }
                 else 
                 {
-                    x[0] += dx;
+                    x[0] += this->dx;
                 }
             }
-            x[1] += dx;
+            x[1] += this->dx;
         }
     }
     else if (shape == "shoaling")
@@ -193,7 +179,7 @@ void SPH_main::place_points(double *min, double *max, string shape)
         double shoaling_x2_start = 0;
         double shoaling_x2_end = beach_height_ratio * (max[1] - 2.*h) - dx;
         
-        const double shoaling_slope = dx / (shoaling_x2_end - shoaling_x2_start);
+        const double shoaling_slope = this->dx / (shoaling_x2_end - shoaling_x2_start);
         const double start[2] = { shoaling_x1_start, shoaling_x2_start };
         const double end[2] = { shoaling_x1_end, shoaling_x2_end };
         while (x[1] <= max[1])
@@ -207,7 +193,7 @@ void SPH_main::place_points(double *min, double *max, string shape)
                     bound_particle.x[i] = x[i];
                     bound_particle.calc_index();
                     particle_list.push_back(bound_particle);
-                    x[0] += dx;
+                    x[0] += this->dx;
                 }
                 else if ((x[0] >= shoaling_x1_start) && (x[0] <= shoaling_x1_end) && (x[1] >= shoaling_x2_start) && (x[1] <= shoaling_x2_end))
                 {
@@ -215,7 +201,7 @@ void SPH_main::place_points(double *min, double *max, string shape)
                         bound_particle.x[i] = x[i];
                     bound_particle.calc_index();
                     particle_list.push_back(bound_particle);
-                    x[0] += dx;
+                    x[0] += this->dx;
                 }
                 else if ((x[0] <= 3 && x[1] <= 5) || (3 <= x[0] && x[1] <= 2)) 
                 {
@@ -223,11 +209,11 @@ void SPH_main::place_points(double *min, double *max, string shape)
                         water_particle.x[i] = x[i];
                     water_particle.calc_index();
                     particle_list.push_back(water_particle);
-                    x[0] += dx;
+                    x[0] += this->dx;
                 }
                 else 
                 {
-                    x[0] += dx;
+                    x[0] += this->dx;
                 }
             }
             // cout << endl;
@@ -433,14 +419,14 @@ double SPH_main::dW(const double r)
 	double q = r / this->h;
 	double dw = 0;
 	if (q < 1) {
-        dw = 3*r*(3*r-4*this->h)/(4*this->h*this->h*this->h);
+        dw = 3*r * (3*r/(4*this->h) - 1) / (this->h*this->h);
         //dw = -3 * q + 2.25 * q*q;
     }
 	else if (q < 2) {
-        dw = -3*(r-2*this->h)*(r-2*this->h)/(4*this->h*this->h*this->h);
+        dw = -3*(2*this->h - r)*(2*this->h - r)/(4*this->h*this->h*this->h);
     }
     //how do we make sure q<2
-	return dw ; //10 * dw / (7 * M_PI * this->h * this->h);
+	return 10 * dw / (7 * M_PI * this->h * this->h);
 }
 
 std::pair<double, double> SPH_main::dvdt(const SPH_particle& p_i, const SPH_particle& p_j, const pre_calc_values& vals)
@@ -453,20 +439,9 @@ std::pair<double, double> SPH_main::dvdt(const SPH_particle& p_i, const SPH_part
 
     /* If exactly one of p_i, p_j is a boundary particle, apply repelling force */
     if (p_j.boundary_particle != p_i.boundary_particle && vals.dist < 0.7 * this->dx) {
-        auto part = &p_i;
-        auto bound = &p_j;
-        if (p_i.boundary_particle) {
-            swap(part, bound);
-        }
         auto F = 5 * this->g * (pow(0.7*this->dx/vals.dist, 4) - pow(0.7*this->dx/vals.dist, 2)) / vals.dist;
-        // left or right 
-        if ((bound->x[0] <= 0 && part->x[0] >= bound->x[0]) || (bound->x[0] >= 20 && part->x[0] <= bound->x[0])) {
-            a1 += vals.e_ij_1 * F;
-        }
-        // top or bottom
-        if ((bound->x[1] >= 10 && part->x[1] <= bound->x[1]) || (bound->x[1] <= 0 && part->x[1] >= bound->x[1])) {
-            a2 += vals.e_ij_2 * F;
-        }
+        a1 += vals.e_ij_1 * F;
+        a2 += vals.e_ij_2 * F;
     }
 
     return make_pair(a1, a2);

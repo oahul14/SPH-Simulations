@@ -8,6 +8,8 @@
 void test_timeloop(SPH_main& domain, double tmax = 1, double tprec = 0.02, SPH_main::timesteppers ts = SPH_main::AB2) {
 	int counter = 0;
 	
+	const auto start = std::chrono::high_resolution_clock::now();
+	double file_write_time = 0;
 	while (domain.t < tmax) {
 		while(domain.t < counter * tprec) {
 			if (domain.previous_offsets.empty() && ts == SPH_main::AB2) {
@@ -17,8 +19,15 @@ void test_timeloop(SPH_main& domain, double tmax = 1, double tprec = 0.02, SPH_m
 			}
 		}
 		counter++;
+		const auto file_start = std::chrono::high_resolution_clock::now();
 		write_file("particles_" + std::to_string(domain.t/100) + ".vtp", domain.particle_list);
+		const auto file_end = std::chrono::high_resolution_clock::now();
+		file_write_time += (file_end - file_start).count() / 1e6;
 	}
+	const auto end = std::chrono::high_resolution_clock::now();
+	std::cout << "total iterations = " << domain.count << std::endl;
+	std::cout << "avg runtime per iteration [ms] = " << ((end - start).count() / 1e6 - file_write_time) / domain.count << std::endl;
+	std::cout << "avg file writing time [ms] = " << file_write_time / domain.count << std::endl;
 }
 
 int main(int argc, char* argv[]) {

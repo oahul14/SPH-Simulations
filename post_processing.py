@@ -8,6 +8,7 @@ import shutil
 import imageio
 
 
+#####################################################
 def load_data(folder_list):
     print("Loading vtp files ...")
     all_data = []
@@ -26,7 +27,8 @@ def load_data(folder_list):
 
     return all_data
 
-##########
+
+#####################################################
 def get_fig(num,total_data, save_folder=None):
     v_data = total_data[num].GetPointData().GetArray('Velocity')
     direction = True
@@ -105,13 +107,9 @@ def get_fig(num,total_data, save_folder=None):
         plt.close(fig1)
 
     return max_v,x_peak_position,y_peak_position
-    #####################################
-#     plt.show()
 
 
-
-
-#############
+#####################################################
 def get_x_y_v(total_data, save_folder=None):
     max_v = []
     max_x = []
@@ -130,6 +128,7 @@ def get_x_y_v(total_data, save_folder=None):
     return total_information
 
 
+#####################################################
 def make_animation(figures_folder):
             
     with imageio.get_writer(os.path.join(figures_folder, 'animation.gif'), mode='I') as writer:
@@ -139,6 +138,7 @@ def make_animation(figures_folder):
                 writer.append_data(image)
     
 
+############################################################################
 if __name__ == "__main__":
 
     this_dir = os.path.dirname(os.path.abspath(__file__))
@@ -150,27 +150,27 @@ if __name__ == "__main__":
 
     labels = ['0.05', '0.08', '0.1', '0.16', '0.2', '0.4', '0.5', '0.8']
 
-    # figures_folder = os.path.join(this_dir, "data", "figures")
-    # if os.path.exists(figures_folder):
-    #     shutil.rmtree(figures_folder)
-    # os.mkdir(figures_folder)
+    figures_folder = os.path.join(this_dir, "data", "figures")
+    if os.path.exists(figures_folder):
+        shutil.rmtree(figures_folder)
+    os.mkdir(figures_folder)
 
-    # save_folders = [os.path.join(figures_folder, label) for label in labels]
-    # for folder in save_folders:
-    #     os.mkdir(folder)
+    save_folders = [os.path.join(figures_folder, label) for label in labels]
+    for folder in save_folders:
+        os.mkdir(folder)
 
     total = []
     for i in range(len(folders_names)):
         t = []
         for j in range(len(all_data[i])):
             t.append(j/10)
-        # information = get_x_y_v(all_data[i], save_folders[i])
+        information = get_x_y_v(all_data[i], save_folders[i])
         information = get_x_y_v(all_data[i])
         total.append(np.array(information[0]))
     
     t = np.array(t)
-    # for folder in save_folders:
-    #     make_animation(folder)
+    for folder in save_folders:
+        make_animation(folder)
     
     fig, ax = plt.subplots(4, 2, figsize=(10, 10))
     plt.tight_layout()

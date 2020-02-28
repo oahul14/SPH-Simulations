@@ -1,1 +1,0 @@
-/usr/bin/c++    -rdynamic CMakeFiles/test_file_writer.dir/test_file_writer.cpp.o  -o test_file_writer -Wl,-rpath,"/mnt/c/Users/gc2016/OneDrive - Imperial College London/ACSE/ACSE-4.3/acse-4-sph-morar/tests/src" ../src/libfile_writer.so ../src/libSPH.so 

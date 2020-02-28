@@ -54,74 +54,150 @@ public:
 	void operator+=(const offset& delta);
 };
 
-struct Bound_info 
-{
-	double b_left = 0; 
-	double b_right = 20;
-	double b_bot = 0;
-	double b_top = 10;
-};
-
-
-
 class SPH_main 
 {
 public:
-	SPH_main();
+	enum timesteppers {
+		forward_euler, improved_euler, AB2
+	};
+	
+	/**
+	 * @brief create shapes enum for placing points: rectangle and shoaling
+	 */
+	enum shapes {
+		rectangle, shoaling
+	};
 
-	void set_values();
-	void set_stencil(bool sten);
+	SPH_main();
+	/**s
+	 * @brief initialising min_x and max_x and max number of boxes of 2h
+	 */
 	void initialise_grid();
 
-	void place_points(double *min, double *max, string shape = "rectangle");
+	/**
+	 * @brief placing water cells within inner domain; placing boundary cells for outer domain
+	 * 
+	 * @param min domain's minimum x and y coordinates for the entire domain (including boundary)
+	 * @param max domain's maximum x and y coordinates for the entire domain (including boundary)
+	 * @param shape boundary shape: including normal rectangle and shoaling
+	 */
+	void place_points(double *min, double *max, const shapes& shape = rectangle);
     
 	//allocates all the points to the search grid (assumes that index has been appropriately updated)
 	vector<vector<list<pair<SPH_particle*, list<SPH_particle*>::size_type>>>> search_grid(list<SPH_particle>& particle_list);
 
 	vector<offset> calculate_offsets(list<SPH_particle>& particles);
 
-	pair<offset, offset> calculate_offset(const SPH_particle& p_i, const SPH_particle& p_j, const pre_calc_values& vals);
+	pair<offset, offset> calc_offset(const SPH_particle& p_i, const SPH_particle& p_j, const pre_calc_values& vals);
 	list<offset> offsets(list<SPH_particle>& particle_list);
-	void timestep();
+	void timestep(const timesteppers& ts = forward_euler);
 
-	pair<double, double> dvdt(SPH_particle p_i, SPH_particle p_j, const pre_calc_values& vals);
+	pair<double, double> dvdt(const SPH_particle& p_i, const SPH_particle& p_j, const pre_calc_values& vals);
 	double drhodt(const SPH_particle& p_i, const SPH_particle& p_j, const pre_calc_values& vals);
 	double W(const double r);
 	double dW(const double r);
 
-	SPH_particle smooth(const SPH_particle& part, const list<pair<SPH_particle*, pre_calc_values>>& neighbours);
+	void smooth(list<SPH_particle>& particles);
 
-	double h;								//smoothing length
-	double h_fac;
-	double dx = 0.2;								//particle initial spacing
-	double rho0 = 1000;// kg/ m^3
+	void drag_back(SPH_particle& part);
+
+	/**
+	 * @brief characteristic smoothing length
+	 */
+	double h;
+
+	/**
+	 * @brief the factor to determine h: set to 1.3
+	 */
+	double h_fac = 1.3;
+
+	/**
+	 * @brief mesh resolution
+	 */
+	double dx = 0.2;	
+
+	/**
+	 * @brief initial density for both water and boundary cells, in kg/m3
+	 */
+	double rho0 = 1000;
+
+	/**
+	 * @brief viscosity constant in navier stokes equation
+	 */
 	double mu = 0.001; 
+
+	/**
+	 * @brief gravitational acceleration constant
+	 */
 	double g = 9.81;
-	//to make sure equation is stiff enough
+
+	/**
+	 * @brief exponential for the ratio of current rho and initial rho 
+	 * to provide stiff enough (slightly compressible) state
+	 */
 	int gamma = 7;
-	//artificial speed of sound 
+	
+	/**
+	 * @brief artificial velocity of sound
+	 * selected to be larger than the speed sustained in the system
+	 */
 	double c0 = 20;
-	// this parameter is in [0.1,0,3]
+
+	/**
+	 * @brief Courant–Friedrichs–Lewy condition: should be in range [0.1, 0.3], set as 0.2
+	 */
 	double Ccfl = 0.2;
-	double min_x[2], max_x[2];
-	bool stencil = false;
+
+	/**
+	 * @brief minimum x and y coordinates: initialised as the size of the inner domain
+	 */
+	double min_x[2] {0, 0};
+
+	/**
+	 * @brief maximum x and y coordinates: initialised as the size of the inner domain
+	 * 
+	 */
+	double max_x[2] {20, 10};
 
 	double max_vij2, max_ai2, max_rho;
 
+	/**
+	 * @brief current time state for the domain 
+	 */
 	double t = 0;	
+
+	/**
+	 * @brief dynamic time step
+	 * 
+	 */
 	double dt;
+
+	/**
+	 * @brief get track of dt at previous stage
+	 */
+	double prev_dt = 0;
+
 	int count = 0;
-	// set the smoothing intervel in fix number
+
+	/**
+	 * @brief set the smoothing intervel in fix number
+	 */
 	int smoothing_interval = 10;
 
-	//set the ouput intervel
-
+	/**
+	 * @brief set the ouput intervel
+	 */
 	int output_intervval = 10;
 
 	int max_list[2];
-	Bound_info boundary;
-	list<SPH_particle> particle_list;						//list of all the particles
-	//struct bound_info boundary {0, 120, 0, 10};
-    //Outer 2 are the grid, inner vector is the list of pointers in each cell
-    // serach grid excludes boundary cells
+
+	/**
+	 * @brief list to store all particles
+	 */
+	list<SPH_particle> particle_list;
+
+	/**
+	 * @brief vector to keep track of the previous stage offsets
+	 */
+	vector<offset> previous_offsets;
 };

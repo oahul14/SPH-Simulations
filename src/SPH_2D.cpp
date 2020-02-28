@@ -369,7 +369,7 @@ void SPH_main::timestep(const timesteppers& ts)
             auto offsets_it = offsets_1.cbegin();
             auto prev_offsets_it = this->previous_offsets.cbegin();
             while(particle_list_it != this->particle_list.end()) {
-                *particle_list_it++ += *offsets_it++ * (3 * 0.5 * this->dt) + *prev_offsets_it++ * (-0.5 * this->dt);
+                *particle_list_it++ += (*offsets_it++ * 1.5 + *prev_offsets_it++ * (-0.5 * this->dt / this->prev_dt))*this->dt;
             }
 
             this->previous_offsets = move(offsets_1);        

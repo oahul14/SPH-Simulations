@@ -10,7 +10,11 @@ void test_timestep(SPH_main& domain, const SPH_main::timesteppers ts, const int 
 	//std::cout << "dt = " << domain.dt << std::endl;
 	write_file("particles_" + std::to_string(domain.t) + ".vtp", domain.particle_list);
 
+	int count = 0;
 	while(domain.t < t_max) {
+		if (count++ == 0 && ts == SPH_main::AB2){
+			domain.timestep(SPH_main::improved_euler);
+		}
 		domain.timestep(ts);
 		write_file("particles_" + std::to_string(domain.t) + ".vtp", domain.particle_list);
 	}
@@ -153,7 +157,7 @@ int main(int argc, char* argv[])
 	}
 	if (argc > 2) {
 		auto arg = string(argv[2]);
-		ts = (arg == "forward_euler") ? SPH_main::forward_euler : (arg == "improved_euler") ? SPH_main::improved_euler :
+		ts = (arg == "forward_euler") ? SPH_main::forward_euler : (arg == "improved_euler") ? SPH_main::improved_euler : (arg == "AB2") ? SPH_main::AB2 :
 			throw std::invalid_argument("invalid time stepping scheme " + arg);
 	}
 

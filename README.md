@@ -33,12 +33,7 @@ The files that we have output can be viewed using ParaView, a free program. Simp
 
 ### Testing
 
-The tool includes tests, which you can use to check its operation on your system. With the code compiled, these can be run 
-with
 
-```
-python run_tests.py
-```
 We have also added C++ unit tests that test the individual functions. To compile them navigate to the 'tests' subdirectory and type 'make'.
 To execute them type './tests/test_SPH'. These tests are assert statements so if any of them fail, the exucutable will not be executed.
 If all tests pass,  the following message will appear: 'All tests passed succesfully ! '

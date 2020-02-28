@@ -131,99 +131,104 @@ void SPH_main::initialise_grid(void)
 }
 
 
-void SPH_main::place_points(double *min, double *max, string shape)
+void SPH_main::place_points(double *min, double *max, const shapes& shape)
 {
 	double x[2] = { min[0], min[1] };
 
 	SPH_particle water_particle(rho0, false);
     SPH_particle bound_particle(rho0, true);
 
-    if (shape == "rectangle")
-    {
-        while (x[1] <= max[1])
-        {
-            x[0] = min[0];
-            while (x[0] <= max[0])
+    switch(shape) {
+        case rectangle: {
+            while (x[1] <= max[1])
             {
-                if ((x[0] < min[0]+2*h) || (x[0] > max[0]-2*h) || (x[1] < min[1]+2*h) || (x[1] > max[1]-2*h)) 
+                x[0] = min[0];
+                while (x[0] <= max[0])
                 {
-                    for (int i = 0; i < 2; i++)
-                        bound_particle.x[i] = x[i];
-                    particle_list.push_back(bound_particle);
-                    x[0] += this->dx;
+                    if ((x[0] < min[0]+2*h) || (x[0] > max[0]-2*h) || (x[1] < min[1]+2*h) || (x[1] > max[1]-2*h)) 
+                    {
+                        for (int i = 0; i < 2; i++)
+                            bound_particle.x[i] = x[i];
+                        particle_list.push_back(bound_particle);
+                        x[0] += this->dx;
+                    }
+                    else if ((x[0] <= 3 && x[1] <= 5) || (3 <= x[0] && x[1] <= 2)) 
+                    {
+                        for (int i = 0; i < 2; i++)
+                            water_particle.x[i] = x[i];
+                        particle_list.push_back(water_particle);
+                        x[0] += this->dx;
+                    }
+                    else 
+                    {
+                        x[0] += this->dx;
+                    }
                 }
-                else if ((x[0] <= 3 && x[1] <= 5) || (3 <= x[0] && x[1] <= 2)) 
-                {
-                    for (int i = 0; i < 2; i++)
-                        water_particle.x[i] = x[i];
-                    particle_list.push_back(water_particle);
-                    x[0] += this->dx;
-                }
-                else 
-                {
-                    x[0] += this->dx;
-                }
+                x[1] += this->dx;
             }
-            x[1] += this->dx;
         }
-    }
-    else if (shape == "shoaling")
-    {
-        double beach_height_ratio = 0.2;
-        double beach_length_ratio = 0.5;
+        break;
         
-        // beach starts at half way in x1: (x1, 2h)
-        double shoaling_x1_start = (max[0] - 2.*h) - beach_length_ratio * (max[0] - 2.*h);
-        double shoaling_x1_end = max[0] - 2.*h;
-        // beach ends at (max[0] - 2h, x2)
-        double shoaling_x2_start = 0;
-        double shoaling_x2_end = beach_height_ratio * (max[1] - 2.*h) - dx;
-        
-        const double shoaling_slope = this->dx / (shoaling_x2_end - shoaling_x2_start);
-        const double start[2] = { shoaling_x1_start, shoaling_x2_start };
-        const double end[2] = { shoaling_x1_end, shoaling_x2_end };
-        while (x[1] <= max[1])
-        {
-            x[0] = min[0];
-            while (x[0] <= max[0])
+        case shoaling:{
+            double beach_height_ratio = 0.2;
+            double beach_length_ratio = 0.5;
+            
+            // beach starts at half way in x1: (x1, 2h)
+            double shoaling_x1_start = (max[0] - 2.*h) - beach_length_ratio * (max[0] - 2.*h);
+            double shoaling_x1_end = max[0] - 2.*h;
+            // beach ends at (max[0] - 2h, x2)
+            double shoaling_x2_start = 0;
+            double shoaling_x2_end = beach_height_ratio * (max[1] - 2.*h) - dx;
+            
+            const double shoaling_slope = this->dx / (shoaling_x2_end - shoaling_x2_start);
+            const double start[2] = { shoaling_x1_start, shoaling_x2_start };
+            const double end[2] = { shoaling_x1_end, shoaling_x2_end };
+            while (x[1] <= max[1])
             {
-                if ((x[0] < min[0] + 2.*h) || (x[0] > max[0] - 2.*h) || (x[1] < min[1] + 2.*h) || (x[1] > max[1] - 2.*h)) 
+                x[0] = min[0];
+                while (x[0] <= max[0])
                 {
-                    for (int i = 0; i < 2; i++)
-                    bound_particle.x[i] = x[i];
-                    bound_particle.calc_index();
-                    particle_list.push_back(bound_particle);
-                    x[0] += this->dx;
-                }
-                else if ((x[0] >= shoaling_x1_start) && (x[0] <= shoaling_x1_end) && (x[1] >= shoaling_x2_start) && (x[1] <= shoaling_x2_end))
-                {
-                    for (int i = 0; i < 2; i++)
+                    if ((x[0] < min[0] + 2.*h) || (x[0] > max[0] - 2.*h) || (x[1] < min[1] + 2.*h) || (x[1] > max[1] - 2.*h)) 
+                    {
+                        for (int i = 0; i < 2; i++)
                         bound_particle.x[i] = x[i];
-                    bound_particle.calc_index();
-                    particle_list.push_back(bound_particle);
-                    x[0] += this->dx;
+                        bound_particle.calc_index();
+                        particle_list.push_back(bound_particle);
+                        x[0] += this->dx;
+                    }
+                    else if ((x[0] >= shoaling_x1_start) && (x[0] <= shoaling_x1_end) && (x[1] >= shoaling_x2_start) && (x[1] <= shoaling_x2_end))
+                    {
+                        for (int i = 0; i < 2; i++)
+                            bound_particle.x[i] = x[i];
+                        bound_particle.calc_index();
+                        particle_list.push_back(bound_particle);
+                        x[0] += this->dx;
+                    }
+                    else if ((x[0] <= 3 && x[1] <= 5) || (3 <= x[0] && x[1] <= 2)) 
+                    {
+                        for (int i = 0; i < 2; i++)
+                            water_particle.x[i] = x[i];
+                        water_particle.calc_index();
+                        particle_list.push_back(water_particle);
+                        x[0] += this->dx;
+                    }
+                    else 
+                    {
+                        x[0] += this->dx;
+                    }
                 }
-                else if ((x[0] <= 3 && x[1] <= 5) || (3 <= x[0] && x[1] <= 2)) 
+                // cout << endl;
+                if ((x[1] >= start[1]) && x[1] <= end[1])
                 {
-                    for (int i = 0; i < 2; i++)
-                        water_particle.x[i] = x[i];
-                    water_particle.calc_index();
-                    particle_list.push_back(water_particle);
-                    x[0] += this->dx;
+                    shoaling_x1_start += shoaling_slope * (end[0] - start[0]);
+                    shoaling_x2_start += dx;
                 }
-                else 
-                {
-                    x[0] += this->dx;
-                }
+                x[1] += dx;
             }
-            // cout << endl;
-            if ((x[1] >= start[1]) && x[1] <= end[1])
-            {
-                shoaling_x1_start += shoaling_slope * (end[0] - start[0]);
-                shoaling_x2_start += dx;
-            }
-            x[1] += dx;
         }
+        break;
+        default:
+            throw std::invalid_argument("shape not implemented");
     }
 }
 
@@ -438,8 +443,8 @@ std::pair<double, double> SPH_main::dvdt(const SPH_particle& p_i, const SPH_part
     auto a2 = c1 * vals.e_ij_2 +  c2 * vals.v_ij_2 / vals.dist;
 
     /* If exactly one of p_i, p_j is a boundary particle, apply repelling force */
-    if (p_j.boundary_particle != p_i.boundary_particle && vals.dist < 0.7 * this->dx) {
-        auto F = 5 * this->g * (pow(0.7*this->dx/vals.dist, 4) - pow(0.7*this->dx/vals.dist, 2)) / vals.dist;
+    if (p_j.boundary_particle != p_i.boundary_particle && vals.dist < 0.55 * this->dx) {
+        auto F = 10 * this->g * (pow(0.55*this->dx/vals.dist, 4) - pow(0.55*this->dx/vals.dist, 2)) / vals.dist;
         a1 += vals.e_ij_1 * F;
         a2 += vals.e_ij_2 * F;
     }

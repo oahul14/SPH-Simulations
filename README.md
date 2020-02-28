@@ -10,21 +10,32 @@ surfaces. This tool implements the SPH method in C++ to solve wave generation in
 
 ### Compilation/Installation Guide
 
-*To be written*
+You need to install Cmake first:
+    sudo apt-get -y install cmake
+
+Clone this repositiory and create a folder called 'build'. Navigate to that folder 'cd build'. On the command line type 'cmake ..'. This will create c CMakeLists.txt file that contains the instructions for your compiler. 
+Then type 'make' and the program will be compiled.
+
 
 ### User instructions
 
-*To be written*
+To execute the program the commands are : 
+    ```
+    SPH_main tmax interval-for-animation type-of-timestep
+    ```
+tmax: maximum time that the simulation will run 
+interval-for-animation: every how many seconds the program will output files
+type-of-timestep: Options are: forward_euler, improved_euler, AB2. 
+AB2 is the most accurate and forward_euler is the fastest.
 
-### Documentation
+The files that we have output can be viewed using ParaView, a free program. Simply import them and press apply. A graph will be made.
 
-*To be written*
 
 ### Testing
 
-The tool includes tests, which you can use to check its operation on your system. With the code compiled, these can be run 
-with
 
-```
-python run_tests.py
-```
+We have also added C++ unit tests that test the individual functions. To compile them navigate to the 'tests' subdirectory and type 'make'.
+To execute them type './tests/test_SPH'. These tests are assert statements so if any of them fail, the exucutable will not be executed.
+If all tests pass,  the following message will appear: 'All tests passed succesfully ! '
+You can also type ctest and this will test the file writting and out timestepping.
+Known issue: the python_tests will fail, but this is not a cause of concern because we are not using them.

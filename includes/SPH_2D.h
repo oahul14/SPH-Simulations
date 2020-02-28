@@ -36,21 +36,61 @@ class SPH_particle
 public:
 	SPH_particle();
 	SPH_particle(double rho, bool bound);
-	double x[2], v[2];		// position and velocity
-	double rho, P;					// density and pressure
+
+	/**
+	 * @brief velocity and position stored in two directions
+	 */
+	double x[2], v[2];		
+
+	/**
+	 * @brief density rho and pressure p
+	 */
+	double rho, P;					
+	
+	/**
+	 * @brief boolean to indicate boundary particle or not 
+	 */
 	bool boundary_particle;
 
-	static SPH_main *main_data;		// link to SPH_main class so that it can be used in calc_index
+	/**
+	 * @brief link to SPH_main class so that it can be used in calc_index
+	 */
+	static SPH_main *main_data;		
+
+
 	static double B;
 
-	int list_num[2];				// index in neighbour finding array
+	/**
+	 * @brief index in neighbour finding array
+	 * 
+	 */
+	int list_num[2];	
+
+	/**
+	 * @brief mass for particle
+	 */
 	double m;
+
+	/**
+	 * @brief Set the m object
+	 */
 	void set_m();
 	
-	
+	/**
+	 * @brief calculate the index for grids into list_num
+	 */
 	void calc_index();
+
+	/**
+	 * @brief update pressure using rho: tait equation
+	 */
 	void redef_P(); //function to update the Pressure
 
+	/**
+	 * @brief operator overload for struct offset to update current stage
+	 * 
+	 * @param delta offset variable storing dxdt, dvdt and drhodt
+	 */
 	void operator+=(const offset& delta);
 };
 
@@ -114,7 +154,7 @@ public:
 	/**
 	 * @brief mesh resolution
 	 */
-	double dx = 0.2;	
+	double dx = 0.1;	
 
 	/**
 	 * @brief initial density for both water and boundary cells, in kg/m3

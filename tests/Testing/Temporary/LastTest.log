@@ -1,17 +1,17 @@
-Start testing: Feb 28 10:39 STD
+Start testing: Feb 28 11:13 STD
 ----------------------------------------------------------
 1/5 Testing: test_file_writer
 1/5 Test: test_file_writer
 Command: "/mnt/c/Users/gc2016/OneDrive - Imperial College London/ACSE/ACSE-4.3/acse-4-sph-morar/tests/tests/test_file_writer"
 Directory: /mnt/c/Users/gc2016/OneDrive - Imperial College London/ACSE/ACSE-4.3/acse-4-sph-morar/tests/tests
-"test_file_writer" start time: Feb 28 10:39 STD
+"test_file_writer" start time: Feb 28 11:13 STD
 Output:
 ----------------------------------------------------------
 <end of output>
-Test time =   0.04 sec
+Test time =   0.05 sec
 ----------------------------------------------------------
 Test Passed.
-"test_file_writer" end time: Feb 28 10:39 STD
+"test_file_writer" end time: Feb 28 11:13 STD
 "test_file_writer" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -19,18 +19,19 @@ Test Passed.
 2/5 Test: test_SPH_forward_euler
 Command: "/mnt/c/Users/gc2016/OneDrive - Imperial College London/ACSE/ACSE-4.3/acse-4-sph-morar/tests/tests/test_SPH" "10" "forward_euler"
 Directory: /mnt/c/Users/gc2016/OneDrive - Imperial College London/ACSE/ACSE-4.3/acse-4-sph-morar/tests/tests
-"test_SPH_forward_euler" start time: Feb 28 10:39 STD
+"test_SPH_forward_euler" start time: Feb 28 11:13 STD
 Output:
 ----------------------------------------------------------
  ============================================================================== 
 
- All tests passed succesfully ! 
+							 All tests passed succesfully ! 
+
  ============================================================================== 
 <end of output>
-Test time =   0.24 sec
+Test time =   0.25 sec
 ----------------------------------------------------------
 Test Passed.
-"test_SPH_forward_euler" end time: Feb 28 10:39 STD
+"test_SPH_forward_euler" end time: Feb 28 11:13 STD
 "test_SPH_forward_euler" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -38,18 +39,19 @@ Test Passed.
 3/5 Test: test_SPH_improved_euler
 Command: "/mnt/c/Users/gc2016/OneDrive - Imperial College London/ACSE/ACSE-4.3/acse-4-sph-morar/tests/tests/test_SPH" "10" "improved_euler"
 Directory: /mnt/c/Users/gc2016/OneDrive - Imperial College London/ACSE/ACSE-4.3/acse-4-sph-morar/tests/tests
-"test_SPH_improved_euler" start time: Feb 28 10:39 STD
+"test_SPH_improved_euler" start time: Feb 28 11:13 STD
 Output:
 ----------------------------------------------------------
  ============================================================================== 
 
- All tests passed succesfully ! 
+							 All tests passed succesfully ! 
+
  ============================================================================== 
 <end of output>
-Test time =   0.24 sec
+Test time =   0.26 sec
 ----------------------------------------------------------
 Test Passed.
-"test_SPH_improved_euler" end time: Feb 28 10:39 STD
+"test_SPH_improved_euler" end time: Feb 28 11:13 STD
 "test_SPH_improved_euler" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -57,18 +59,19 @@ Test Passed.
 4/5 Test: test_SPH_AB2
 Command: "/mnt/c/Users/gc2016/OneDrive - Imperial College London/ACSE/ACSE-4.3/acse-4-sph-morar/tests/tests/test_SPH" "10" "AB2"
 Directory: /mnt/c/Users/gc2016/OneDrive - Imperial College London/ACSE/ACSE-4.3/acse-4-sph-morar/tests/tests
-"test_SPH_AB2" start time: Feb 28 10:39 STD
+"test_SPH_AB2" start time: Feb 28 11:13 STD
 Output:
 ----------------------------------------------------------
  ============================================================================== 
 
- All tests passed succesfully ! 
+							 All tests passed succesfully ! 
+
  ============================================================================== 
 <end of output>
-Test time =   0.25 sec
+Test time =   0.24 sec
 ----------------------------------------------------------
 Test Passed.
-"test_SPH_AB2" end time: Feb 28 10:39 STD
+"test_SPH_AB2" end time: Feb 28 11:13 STD
 "test_SPH_AB2" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -76,7 +79,7 @@ Test Passed.
 5/5 Test: python_tests
 Command: "/usr/bin/python3" "python_tests.py"
 Directory: /mnt/c/Users/gc2016/OneDrive - Imperial College London/ACSE/ACSE-4.3/acse-4-sph-morar/tests/tests
-"python_tests" start time: Feb 28 10:39 STD
+"python_tests" start time: Feb 28 11:13 STD
 Output:
 ----------------------------------------------------------
 Traceback (most recent call last):
@@ -84,11 +87,11 @@ Traceback (most recent call last):
     import vtk
 ModuleNotFoundError: No module named 'vtk'
 <end of output>
-Test time =   2.71 sec
+Test time =   0.35 sec
 ----------------------------------------------------------
 Test Failed.
-"python_tests" end time: Feb 28 10:39 STD
-"python_tests" time elapsed: 00:00:02
+"python_tests" end time: Feb 28 11:13 STD
+"python_tests" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-End testing: Feb 28 10:39 STD
+End testing: Feb 28 11:13 STD

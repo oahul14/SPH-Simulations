@@ -1,7 +1,7 @@
-test_file_writer 1 0.0442941
-test_SPH_forward_euler 1 0.2445
-test_SPH_improved_euler 1 0.243983
-test_SPH_AB2 1 0.251753
+test_file_writer 2 0.0231171
+test_SPH_forward_euler 2 0.124505
+test_SPH_improved_euler 2 0.12837
+test_SPH_AB2 2 0.117715
 python_tests 0 0
 ---
 python_tests
